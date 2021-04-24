@@ -1,0 +1,126 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>gaming</title>
+</head>
+<body onload="render()" onkeypress="move(event)" style="text-align: center;">
+    <canvas id="canvas" width="1280" height="640"></canvas>
+    <image id="wall" src="wall.png" hidden></image>
+</body>
+<script>
+/* items: array
+i[0] = dmgMin
+1[1] = dmgMax
+i[2] = agiMin
+i[3] = agiMax
+i[4] = element
+i[4]:
+0 = none
+1 = fire
+2 = ice
+3 = lightning
+4 = poison
+i[5] = mp required for abillity
+i[6] = ability type
+i[6]:
+0: physical (+damage)
+1: fire (constent % chance for damage)
+2: ice (% to slow down)
+3: poison (lose hp)
+i[7] = strength of ability
+physical: [dmgMin,dmgMax]
+fire: [chance for burn, burnMin, burnMax, duration]
+ice: [slow %, duration]
+poison: [dmg, duration]
+*/
+var inv = [0,0,0,0,0,0]
+var items = []
+items[0]
+var img = {
+    wall:document.getElementById("wall"),
+}
+var canvas = document.getElementById("canvas")
+var ctx = canvas.getContext("2d")
+var pos = {x:2,y:0}
+function render() {
+    var g,h
+    for (g in Array(Math.ceil(canvas.height/40)).fill(0)) {
+        for (h in Array(Math.ceil(canvas.width/40)).fill(0)) {
+            ctx.drawImage(img.wall,h*40,g*40)
+        }
+    }
+    var a=0
+    while (a<20) {
+        var b=0
+        while (b<20) {
+            var design = [[1,1,0,1,1],
+                          [1,0,0,0,1],
+                          [0,0,1,0,0],
+                          [1,0,0,0,1],
+                          [1,1,0,1,1]]
+            var c,d
+            for (c in design) {
+                for (d in design[c]) {
+                    switch (design[c][d]) {
+                        case 0: ctx.fillStyle="#313131";ctx.fillRect(d*40+b*200-pos.x*40+640 , c*40+a*200-pos.y*40+320,40,40);break;
+                        case 1: ctx.drawImage(img.wall,d*40+b*200-pos.x*40+640 , c*40+a*200-pos.y*40+320);break;
+                    }
+                }
+            }
+            b++
+        }
+        a++
+    }
+    ctx.fillStyle = "yellow"
+    ctx.fillRect(640,320,40,40);ctx.fillStyle="black"
+    ctx.fillRect(680,280,40,40)
+    ctx.fillRect(680,360,40,40)
+    ctx.fillRect(600,280,40,40)
+    ctx.fillRect(600,360,40,40)
+    var view = ctx.getImageData(600,280,120,120)
+    ctx.fillRect(0,0,10000,10000)
+    ctx.putImageData(view,600,280)
+}
+var bad = [[0,0],[1,0],[3,0],[4,0],[0,1],[4,1],[2,2],[0,3],[4,3],[0,4],[1,4],[3,4],[4,4]]
+function findIndex(a,b) {var c,d=true;for(c in a){JSON.stringify(a[c])===JSON.stringify(b)?d=false:0}return d}
+function move(e) {
+    var key = e.which || e.keycode
+    var mPos = [Math.abs(pos.x%5),Math.abs(pos.y%5),Math.abs((pos.x+1)%5),Math.abs((pos.x-1)%5),Math.abs((pos.y+1)%5),Math.abs((pos.y-1)%5)]
+   /*bad moves in [x,y]*/
+    switch (key) {
+        case 87:
+        case 119: //up move
+        case 38:
+            if (findIndex(bad,[mPos[0],mPos[5]])&&pos.y>=0) {
+                pos.y--
+            }
+        break;
+        case 83:
+        case 115: //down move
+        case 40:
+            if (findIndex(bad,[mPos[0],mPos[4]])&&pos.y<100) {
+                pos.y++
+            }
+        break;
+        case 65:
+        case 97: //left move
+        case 37:
+            if (findIndex(bad,[mPos[3],mPos[1]])&&pos.x>=0) {
+                pos.x--
+            }
+        break;
+        case 68:
+        case 100: //right move
+        case 39:
+            if (findIndex(bad,[mPos[2],mPos[1]])&&pos.x<100) {
+                pos.x++
+            }
+        break;
+    }
+    console.log(pos)
+    render()
+}
+</script>
+</html>
