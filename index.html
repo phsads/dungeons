@@ -6,52 +6,114 @@
 	<title>Document</title>
 	<link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@700&display=swap" rel="stylesheet">
+        <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@500&display=swap" rel="stylesheet">
 </head>
-<body onload="Load()" onkeypress="move(event)">
-	<canvas width="900" height="600" id="canvas" onmousemove="getMousePos(event)"> mousedown="</canvas>
+<body onload="Load()" onkeydown="move(event)" style="text-align:center">
+	<canvas width="900" height="600" id="canvas" onmousemove="getMousePos(event)"></canvas>
 </body>
 <script>
 //non gameplay variables
-var mouseDown = [0, 0, 0, 0, 0, 0, 0, 0, 0],mouseDownCount = 0;
-var map //height map
-var avg = 5 //how many times times to avg-ing (5 meaning set to avg every 5 updates)
-var heatMap //heat map
-var canvas = document.getElementById("canvas")
-var ctx = canvas.getContext("2d") //rendering
-var max=0,min=0,heatMax=0,heatMin=0 //kinda useless (dont delete)
-var width = 200,height = 200 //width and height of map
-var times = 0 //kinda useless (dont delete)
-
-
+var times = 0
+var screen = ""
 var objectMap
-var seed = Math.round(Math.random()*2**16) //seed
-var day = 0
-var hr = 6
+var seed = Math.round(Math.random()*2**24) //seed
 var attackDuration = 0 //animation
 var mousePos = {}
 var particles = []
+var click = [false, 0]
 var texts = []
 var projs = []
 var drops = []
-var sprite = {
-	player: new Image(),
-	object: new Image(),
-	rick: new Image(), 
-}
-sprite.player.src = "player.png"
-sprite.object.src = "object.png"
-sprite.rick.src = "rick.png"
+var holding = 0
+var screenBonus = [0,1,0,0,0,0,0,0]
+
+
+
+
+
+
+
+
+
 var items = [
-	{},
-	{name:"Wood",minDamage:2,maxDamage:3,atkSpeed:1,},
+	//name: name, mindmg, maxdmg, atkspeedmult, rarity (cosmetic), toolstrength, damagemult: [ores, trees, mob, buildings], description
+	{name:"Nothing"           ,minDamage:2 , maxDamage:2 , atkSpeed:1   , rarity: "common", toolStrength: 0, damageMult:[1  , 1  , 1  , 1], desc:"it's nothing"          },
+	{name:"Balsa Wood"        ,minDamage:2 , maxDamage:3 , atkSpeed:1   , rarity: "common", toolStrength: 0, damageMult:[1  , 1  , 1  , 1], desc:"softboi"               },
+	{name:"Workbench"         ,minDamage:2 , maxDamage:2 , atkSpeed:1   , rarity: "common", toolStrength: 0, damageMult:[1  , 1  , 1  , 1], desc:"bench"                 },
+	{name:"Balsa Wall"        ,minDamage:2 , maxDamage:2 , atkSpeed:1   , rarity: "common", toolStrength: 0, damageMult:[1  , 1  , 1  , 1], desc:"wall"                  },
+	{name:"Balsa Gate"        ,minDamage:2 , maxDamage:2 , atkSpeed:1   , rarity: "common", toolStrength: 0, damageMult:[1  , 1  , 1  , 1], desc:"wall but gate"         },
+	{name:"Balsa Bark"        ,minDamage:0 , maxDamage:0 , atkSpeed:2   , rarity: "common", toolStrength: 0, damageMult:[1  , 1  , 1  , 1], desc:"tree skin"             },
+	{name:"Balsa Handle"      ,minDamage:3 , maxDamage:4 , atkSpeed:1   , rarity: "common", toolStrength: 0, damageMult:[1  , 1  , 1  , 1], desc:"softboi but handle"    },
+	{name:"Balsa Wood Pickaxe",minDamage:4 , maxDamage:5 , atkSpeed:0.9 , rarity: "common", toolStrength: 1, damageMult:[1.4, 0  , 1  , 1], desc:"it go mine"            },
+	{name:"Balsa Wood Axe"    ,minDamage:4 , maxDamage:5 , atkSpeed:0.9 , rarity: "common", toolStrength: 1, damageMult:[0  , 1.4, 1  , 1], desc:"it go chop chop"       },
+	{name:"Balsa Wood Sword"  ,minDamage:4 , maxDamage:5 , atkSpeed:1.1 , rarity: "common", toolStrength: 1, damageMult:[0  , 0  , 1.4, 1], desc:"it go stab"            },
+	{name:"Stone"             ,minDamage:3 , maxDamage:4 , atkSpeed:1   , rarity: "common", toolStrength: 0, damageMult:[1  , 1  , 1  , 1], desc:"rocc"                  },
+	{name:"Stone Pickaxe"     ,minDamage:7 , maxDamage:9 , atkSpeed:0.9 , rarity: "common", toolStrength: 2, damageMult:[1.5, 0.1, 1.1, 1], desc:"it go mine"            },
+	{name:"Stone Axe"         ,minDamage:7 , maxDamage:9 , atkSpeed:0.9 , rarity: "common", toolStrength: 2, damageMult:[0.1, 1.5, 1.1, 1], desc:"it go chop chop"       },
+	{name:"Stone Sword"       ,minDamage:7 , maxDamage:9 , atkSpeed:1.1 , rarity: "common", toolStrength: 2, damageMult:[0.1, 0.1, 1.5, 1], desc:"it go stab"            },
+	{name:"Stone Wall"        ,minDamage:2 , maxDamage:2 , atkSpeed:1   , rarity: "common", toolStrength: 0, damageMult:[1  , 1  , 1  , 1], desc:"wall"                  },
+	{name:"Stone Gate"        ,minDamage:2 , maxDamage:2 , atkSpeed:1   , rarity: "common", toolStrength: 0, damageMult:[1  , 1  , 1  , 1], desc:"wall but gate"         },
+	{name:"Furnace"           ,minDamage:2 , maxDamage:2 , atkSpeed:1   , rarity: "common", toolStrength: 0, damageMult:[1  , 1  , 1  , 1], desc:"it go hot"             },
+        {name:"Coal"              ,minDamage:1 , maxDamage:1 , atkSpeed:1   , rarity: "common", toolStrength: 0, damageMult:[1  , 1  , 1  , 1], desc:"it's black"            },
+	{name:"Copper Ore"        ,minDamage:3 , maxDamage:4 , atkSpeed:1   , rarity: "common", toolStrength: 0, damageMult:[1  , 1  , 1  , 1], desc:"it's rock but copper"  },
+	{name:"Copper Ingot"      ,minDamage:2 , maxDamage:2 , atkSpeed:1   , rarity: "common", toolStrength: 0, damageMult:[1  , 1  , 1  , 1], desc:"it's copper but ingot" },
+	{name:"Copper Pickaxe"    ,minDamage:11, maxDamage:13, atkSpeed:0.95, rarity: "common", toolStrength: 3, damageMult:[1.6, 0.2, 1.2, 1], desc:"mine"                  },
+	{name:"Copper Axe"        ,minDamage:11, maxDamage:13, atkSpeed:0.95, rarity: "common", toolStrength: 3, damageMult:[0.2, 1.6, 1.2, 1], desc:"choppy chop"           },
+	{name:"Copper Sword"      ,minDamage:13, maxDamage:15, atkSpeed:1.15, rarity: "common", toolStrength: 3, damageMult:[0.2, 0.2, 1.6, 1], desc:"ow"                    },
+	{name:"Copper Helmet"     ,minDamage:2 , maxDamage:2 , atkSpeed:1   , rarity: "common", toolStrength: 0, damageMult:[1  , 1  , 1  , 1], desc:"it's upside down w"    },
+	{name:"Copper Chestplate" ,minDamage:2 , maxDamage:2 , atkSpeed:1   , rarity: "common", toolStrength: 0, damageMult:[1  , 1  , 1  , 1], desc:"it's chestplate"       },
+	{name:"Copper Leggings"   ,minDamage:2 , maxDamage:2 , atkSpeed:1   , rarity: "common", toolStrength: 0, damageMult:[1  , 1  , 1  , 1], desc:"it's upside down U"    },
+	{name:"Copper Boots"      ,minDamage:2 , maxDamage:2 , atkSpeed:1   , rarity: "common", toolStrength: 0, damageMult:[1  , 1  , 1  , 1], desc:"it's airpods"          },
+]
+var unlocked = Array(items.length).fill(false)
+var recipes = [
+        [   [[1 , 4 ]                    ] , [21, 0] , [2 , 1]  ], //workbench
+	[   [[1 , 1 ]                    ] , [21   ] , [5 , 2]  ], //make bark
+	[   [[1 , 2 ]                    ] , [21   ] , [6 , 1]  ], //balsa handle
+	[   [[1 , 6 ]                    ] , [21   ] , [3 , 1]  ], //balsa wall
+	[   [[1 , 6 ]                    ] , [21   ] , [4 , 1]  ], //balsa gate
+	[   [[6 , 1 ] , [1 , 4] , [5 , 3]] , [21   ] , [7 , 1]  ], //balsa pick
+	[   [[6 , 1 ] , [1 , 4] , [5 , 3]] , [21   ] , [8 , 1]  ], //balsa axe
+	[   [[6 , 1 ] , [1 , 3] , [5 , 3]] , [21   ] , [9 , 1]  ], //balsa sword
+	[   [[6 , 1 ] , [10, 5] , [5 , 3]] , [21   ] , [11, 1]  ], //stone pick
+	[   [[6 , 1 ] , [10, 5] , [5 , 3]] , [21   ] , [12, 1]  ], //stone axe
+	[   [[6 , 1 ] , [10, 4] , [5 , 3]] , [21   ] , [13, 1]  ], //stone sword
+	[   [[10, 6 ]                    ] , [21   ] , [14, 1]  ], //stone wall
+	[   [[10, 6 ]                    ] , [21   ] , [15, 1]  ], //stone gate
+	[   [[10, 10]                    ] , [21   ] , [16, 1]  ], //furnace
+	[   [[1 , 1 ]                    ] , [26   ] , [17, 1]  ], //coal
+	[   [[18, 1 ]                    ] , [26   ] , [19, 1]  ], //copper ingot
+	[   [[6 , 1 ] , [19, 6] , [5 , 3]] , [21   ] , [20, 1]  ], //copper pick
+	[   [[6 , 1 ] , [19, 6] , [5 , 3]] , [21   ] , [21, 1]  ], //copper axe
+	[   [[6 , 1 ] , [19, 5] , [5 , 3]] , [21   ] , [22, 1]  ], //copper sword
+	[   [[19, 5 ]                    ] , [21   ] , [23, 1]  ], //copper helm
+	[   [[19, 15]                    ] , [21   ] , [24, 1]  ], //chestplate
+	[   [[19, 10]                    ] , [21   ] , [25, 1]  ], //leggings
+	[   [[19, 5 ]                    ] , [21   ] , [26, 1]  ], //boots
 ]
 var inventory = [
-	[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],
-	[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],
-	[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],
-	[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],
-	[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],
+	[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],
+	[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],
+	[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],
+	[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],
+	[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],
+	[0, 0, 0, 0]
+]
+var out = [0,0]
+var toolStrengthReq = [0, 
+0, 1, 2, 3, 4, 
+5, 6, 7, 8, 9,
+4, 7, 10, 0, 0,
+0, 1, 1, 2, 2,
+1,
+]
+var objectHP =  [0, 
+        10, 25, 40, 75, 120, 
+	300, 1000, 2000, 4500, 10000, 
+	24000, 50000, 110000, 3e5, 1e6,
+	100, 1800, 22000, 20, 20, 
+	25, 40, 40, 80, 80, 
+	50,
 ]
 var player = {
 	pos: [],
@@ -61,76 +123,169 @@ var player = {
 		mhp: 100,
 		stamina: 100,
 		defense: 20,
-		attackSpeed: 20,
+		attackSpeed: 1,
 		reach: 40,
+		critChance: 40,
+		critDamage: 696.9,
+		inventorySlots: 7,
 	},
+	skills: [0, 0, 0],
 	attackCooldown: 0,
 	powerups: [],
 }
+function calculateDamage() {
+	var crit = 1
+	if( Math.random() < player.stats.critChance%100/100 ) crit *= player.stats.critDamage/100+1
+	crit *= (player.stats.critDamage/100+1)**(Math.floor(player.stats.critChance/100))
+	var i = items[inventory[holding][0]]
+        return [Math.round(randomRange(i.minDamage, i.maxDamage)*crit),crit>1]
+}
 function updateStats() {
-
+	var tempStats = {
+		test: 0.04,
+		hp: player.stats.hp,
+		mhp: player.stats.mhp,
+		stamina: player.stats.stamina,
+		defense: 0,
+	}
+	var combatSkill = player.stats.skills[0]
+        if (combatSkill>=19) {player.stats.critChance = 40; player.stats.critDamage = 175}
 }
 function attack() {
 	var rotation = -Math.atan2(mousePos.x-450,mousePos.y-330)+Math.PI
-	var x2 = -4
-	while (x2<=4) {
-		var y2 = -4
-		while (y2<=4) {
-                        if (circleCollision(player.pos[0]+0.5+51/60*Math.sin(rotation), player.pos[1]+0.5-51/60*Math.cos(rotation), player.stats.reach/60, player.pos[0]+0.5+x2, player.pos[1]+0.5+y2, Math.SQRT1_2)) {
-                                objectMap[player.pos[0]+x2][player.pos[1]+y2][1] -= 2
-				switch (objectMap[player.pos[0]+x2][player.pos[1]+y2][0]) {
+	var x = -4
+	while (x<=4) {
+		var y = -4
+		while (y<=4) {
+                        if (circleCollision(player.pos[0]+0.5+51/60*Math.sin(rotation), player.pos[1]+0.5-51/60*Math.cos(rotation), player.stats.reach/60, player.pos[0]+0.5+x, player.pos[1]+0.5+y, Math.SQRT1_2)) {
+                                var damage = calculateDamage()
+				var x2 = player.pos[0]+x
+				var y2 = player.pos[1]+y
+				if (items[inventory[holding][0]].toolStrength >= toolStrengthReq[objectMap[x2][y2][0]]) {
+                                        damage[0] = Math.round(damage[0]*1.1**(items[inventory[holding][0]].toolStrength-toolStrengthReq[objectMap[x2][y2][0]]))                                
+					objectMap[x2][y2][1] -= damage[0]
+				} else {
+					damage[0] = 0
+				}                           
+				switch (objectMap[x2][y2][0]) {
 					case 1: 
-					        createParticles(player.pos[0]+x2+0.4, player.pos[1]+y2+0.4, 
-						player.pos[0]+x2+0.6, player.pos[1]+y2+0.6
-					        ,[0,2] ,[0.00075,10], -0.1, -0.1, 0.1, 0.1, [92,66,8,255], 
-						0.04, 0.05, 6, 11, 24, 26, 0.86, 0.89)
+					        createParticles(x2+0.4, y2+0.4, 
+						x2+0.6, y2+0.6
+					        ,[1 ,2] ,[0.005, 10], -0.1, -0.1, 0.1, 0.1, [92, 66, 8, 255], 
+						0.1, 0.13, 6, 11, 24, 26, 0.86, 0.89)
 					break;//tree
 					case 2:
-						createParticles(player.pos[0]+x2+0.4, player.pos[1]+y2+0.4, 
-						player.pos[0]+x2+0.6, player.pos[1]+y2+0.6
-					        ,[0,2] ,[0.00075,10], -0.1, -0.1, 0.1, 0.1, [104,104,104,255], 
-						0.04, 0.05, 6, 11, 24, 26, 0.86, 0.89)
+						createParticles(x2+0.4, y2+0.4, x2+0.6, y2+0.6
+					        ,[1 ,2] ,[0.005, 10], -0.1, -0.1, 0.1, 0.1, [100, 100, 108, 255], 
+						0.1, 0.13, 6, 11, 24, 26, 0.86, 0.89)
 					break;//stone
 					case 3:
-						createParticles(player.pos[0]+x2+0.4, player.pos[1]+y2+0.4, 
-						player.pos[0]+x2+0.6, player.pos[1]+y2+0.6
-					        ,[0,2] ,[0.00075,10], -0.1, -0.1, 0.1, 0.1, [104,104,104,255], 
-						0.04, 0.05, 5, 8, 24, 26, 0.86, 0.89)
-						createParticles(player.pos[0]+x2+0.4, player.pos[1]+y2+0.4, 
-						player.pos[0]+x2+0.6, player.pos[1]+y2+0.6
-					        ,[0,2] ,[0.00075,10], -0.1, -0.1, 0.1, 0.1, [145,51,54,255], 
-						0.04, 0.05, 1, 3, 24, 26, 0.86, 0.89)
+						createParticles(x2+0.4, y2+0.4, x2+0.6, y2+0.6
+					        ,[1 ,2] ,[0.005, 10], -0.1, -0.1, 0.1, 0.1, [100, 100, 108, 255], 
+						0.1, 0.13, 5, 8, 24, 26, 0.86, 0.89)
+						createParticles(x2+0.4, y2+0.4, x2+0.6, y2+0.6
+					        ,[1 ,2] ,[0.005, 10], -0.1, -0.1, 0.1, 0.1, [185, 122, 87, 255], 
+						0.1, 0.13, 1, 3, 24, 26, 0.86, 0.89)
 					break;//copper ore
+					case 4:
+						createParticles(x2+0.4, y2+0.4, x2+0.6, y2+0.6
+					        ,[1 ,2] ,[0.005, 10], -0.1, -0.1, 0.1, 0.1, [100, 100, 108, 255], 
+						0.1, 0.13, 5, 8, 24, 26, 0.86, 0.89)
+						createParticles(x2+0.4, y2+0.4, x2+0.6, y2+0.6
+					        ,[1 ,2] ,[0.005, 10], -0.1, -0.1, 0.1, 0.1, [160,129,112,255], 
+						0.1, 0.13, 1, 3, 24, 26, 0.86, 0.89)
+					break;//iron ore
+					case 5:
+						createParticles(x2+0.4, y2+0.4, x2+0.6, y2+0.6
+					        ,[1 ,2] ,[0.005, 10], -0.1, -0.1, 0.1, 0.1, [100, 100, 108, 255], 
+						0.1, 0.13, 5, 8, 24, 26, 0.86, 0.89)
+						createParticles(x2+0.4, y2+0.4, x2+0.6, y2+0.6
+					        ,[1 ,2] ,[0.005, 10], -0.1, -0.1, 0.1, 0.1, [255, 201, 14, 255], 
+						0.1, 0.13, 1, 3, 24, 26, 0.86, 0.89)
+					break;//gold ore
+					case 6:
+						createParticles(x2+0.4, y2+0.4, x2+0.6, y2+0.6
+					        ,[1 ,2] ,[0.005, 10], -0.1, -0.1, 0.1, 0.1, [100, 100, 108, 255], 
+						0.1, 0.13, 5, 8, 24, 26, 0.86, 0.89)
+						createParticles(x2+0.4, y2+0.4, x2+0.6, y2+0.6
+					        ,[1 ,2] ,[0.005, 10], -0.1, -0.1, 0.1, 0.1, [153, 217, 234, 255], 
+						0.1, 0.13, 1, 3, 24, 26, 0.86, 0.89)
+					break;//platinum ore
+					case 7:
+						createParticles(x2+0.4, y2+0.4, x2+0.6, y2+0.6
+					        ,[1 ,2] ,[0.005, 10], -0.1, -0.1, 0.1, 0.1, [109, 106, 99, 255], 
+						0.1, 0.13, 5, 8, 24, 26, 0.86, 0.89)
+						createParticles(x2+0.4, y2+0.4, x2+0.6, y2+0.6
+					        ,[1 ,2] ,[0.005, 10], -0.1, -0.1, 0.1, 0.1, [131, 11, 17, 255], 
+						0.1, 0.13, 1, 3, 24, 26, 0.86, 0.89)
+					break;//lead ore
+					case 8:
+						createParticles(x2+0.4, y2+0.4, x2+0.6, y2+0.6
+					        ,[1 ,2] ,[0.005, 10], -0.1, -0.1, 0.1, 0.1, [121, 154, 187, 255], 
+						0.1, 0.13, 6, 11, 24, 26, 0.86, 0.89)
+					break;//mithril ore
+					case 9:
+						createParticles(x2+0.4, y2+0.4, x2+0.6, y2+0.6
+					        ,[1 ,2] ,[0.005, 10], -0.1, -0.1, 0.1, 0.1, [121, 187, 138, 255], 
+						0.1, 0.13, 6, 11, 24, 26, 0.86, 0.89)
+					break;//adamantite ore
+					case 10:
+						createParticles(x2+0.4, y2+0.4, x2+0.6, y2+0.6
+					        ,[1 ,2] ,[0.005, 10], -0.1, -0.1, 0.1, 0.1, [100, 100, 108, 255], 
+						0.1, 0.13, 5, 8, 24, 26, 0.86, 0.89)
+						createParticles(x2+0.4, y2+0.4, x2+0.6, y2+0.6
+					        ,[1 ,2] ,[0.005, 10], -0.1, -0.1, 0.1, 0.1, [224, 224, 224, 255], 
+						0.1, 0.13, 1, 3, 24, 26, 0.86, 0.89)
+					break;//titanium ore
 				}
-				if (objectMap[player.pos[0]+x2][player.pos[1]+y2][0] > 0) {
-                                        texts.push(JSON.parse(JSON.stringify({
-                                                x: player.pos[0]+x2+0.5,
-					        y: player.pos[1]+y2+0.5,
-					        dx: Math.random()/5-0.1,
-					        dy: 0.15,
-					        fadeSpeed: 10,
-					        color: [255, 255, 255, 255],
-					        content: 2,
-				        })))
+				if (objectMap[x2][y2][0] > 0) {
+					if (damage[1]) {
+                                                texts.push(JSON.parse(JSON.stringify({
+                                                        x: x2+0.5,
+					                y: y2+0.5,
+					                dx: Math.random()/5-0.1,
+					                dy: 0.15,
+					                fadeSpeed: 8,
+					                color: [255, 255, 0, 255],
+					                content: format(damage[0]),
+				                })))
+					} else {
+                                                texts.push(JSON.parse(JSON.stringify({
+                                                        x: x2+0.5,
+					                y: y2+0.5,
+					                dx: Math.random()/5-0.1,
+					                dy: 0.15,
+					                fadeSpeed: 8,
+					                color: [255, 255, 255, 255],
+					                content: format(damage[0]),
+				                })))
+					}
 				}
 			}  
-			y2++
+			y++
 		}
-		x2++
+		x++
 	}
 }
 function update() {
 	if (times>81) {
-		var x=-20
+		var x=-20,c
 	        while (x <= 20) {
 		        var y = -20
 		        while (y <= 20) {
 		        	var x2 = Math.min(Math.max(player.pos[0] + x, 0), 799), y2 = Math.min(Math.max(player.pos[1] + y, 0), 799)
                                 if (objectMap[x2][y2][1] <= 0) {
 					switch (objectMap[x2][y2][0]) {
-                                                case 1: spawnItems([ [1, 3, 5]          ], 1, x2+0.5, y2+0.5) ;break;
-						case 2: spawnItems([ [2, 3, 5]          ], 1, x2+0.5, y2+0.5) ;break;
-						case 3: spawnItems([ [3, 2, 3], [2, 80] ], 1, x2+0.5, y2+0.5) ;break;
+                                                case 1 : spawnItems([ [1 , 3, 5]                      ], 1, x2+0.5, y2+0.5) ;break;
+						case 2 : spawnItems([ [10, 3, 5]                      ], 1, x2+0.5, y2+0.5) ;break;
+						case 3 : spawnItems([ [18, 2, 3], [10, 80], [10, 100] ], 1, x2+0.5, y2+0.5) ;break;
+						/*case 4 : spawnItems([ [4 , 2, 3], [2, 80], [2, 100] ], 1, x2+0.5, y2+0.5) ;break;
+						case 5 : spawnItems([ [5 , 2, 3], [2, 80], [2, 100] ], 1, x2+0.5, y2+0.5) ;break;
+						case 6 : spawnItems([ [6 , 2, 3], [2, 80], [2, 100] ], 1, x2+0.5, y2+0.5) ;break;
+						case 7 : spawnItems([ [7 , 2, 3], [2, 80], [2, 100] ], 1, x2+0.5, y2+0.5) ;break;
+						case 8 : spawnItems([ [8 , 4, 5],                   ], 1, x2+0.5, y2+0.5) ;break;
+						case 9 : spawnItems([ [9 , 4, 5],                   ], 1, x2+0.5, y2+0.5) ;break;
+						case 10: spawnItems([ [10, 3, 5],                   ], 1, x2+0.5, y2+0.5) ;break; */
 					}
                                         objectMap[x2][y2] = [0,0,0]
 				}
@@ -138,20 +293,20 @@ function update() {
 		        }
 		        x++
 	        }
+		updateTime()
+		updateInventory()
+		updateClick()
+		if (click[0]) pickup("inventory")
                 player.stats.stamina=Math.min(player.stats.stamina+0.25,100)
-		player.attackCooldown < 150/player.stats.attackSpeed ? player.attackCooldown++ : 0
-	        hr += 0.002
-	        hr = hr.toFixed(4)
-	        hr %= 24
-	        if (hr==0) day++
-		if (mouseDown[0]&&player.attackCooldown>=150/player.stats.attackSpeed) {
-			player.attackCooldown %= 150/player.stats.attackSpeed
-			attackDuration = 5
+		player.attackCooldown < 100 ? player.attackCooldown+=player.stats.attackSpeed*items[inventory[holding][0]].atkSpeed : 0
+		//console.log((!!mouseDown[0])&&(player.attackCooldown>=100)&&aa)
+		if ((!!mouseDown[0])&&(player.attackCooldown>=100)) {
+			player.attackCooldown %= 100
+			attackDuration = 5	
 			attack()
 		}
-	        spawnObject()
-	        render()
-	    
+	        repeatFunc(spawnObject,10)
+	        render()   
 	}
 }
 function spawnObject() {
@@ -159,63 +314,30 @@ function spawnObject() {
 	var dist = Math.abs(player.pos[0]-spwn[0])+Math.abs(player.pos[1]-spwn[1])
 	var a = 0
 	var toSpawn = parseInt(weighted_random({
-		"1": 20,
-		"2": 15,
-		"3": 10,
+		"1": 100,
+		"2": 85,
+		"3": 60,
+		"4": 40,
+		"5": 25,
+		"6": 15,
+		"7": 10,
+		"8": 6,
+		"9": 3,
+		"10": 2,
 	}))
-	var hp = [0,10,25,40][toSpawn]
+	var hp = objectHP[toSpawn]
 	while ((dist<25||dist>250||objectMap[spwn[0]][spwn[1]][0]!=0||map[spwn[0]][spwn[1]]<0.3)&&a<100) {
                 spwn = [Math.round(Math.random()*798),Math.round(Math.random()*798)]
 		dist = Math.abs(player.pos[0]-spwn[0])+Math.abs(player.pos[1]-spwn[1])
 		a++
 	}
-	a<100 ? objectMap[spwn[0]][spwn[1]] = [toSpawn,hp,hp] : 0
+	a<100 ? objectMap[spwn[0]][spwn[1]] = [toSpawn,hp,hp,{}] : 0
 }
 function render() {
-        ctx.clearRect(0,0,900,600)
-        var heat = heatMax - heatMin
-        var height = max - min
-        var x=0,p
-        while (x<15) {
-                var y=0	
-	        while (y<10) {
-			var x2 = x+player.pos[0]-7
-			var y2 = y+player.pos[1]-5
-                        if (x2<800&&x2>-1&&y2<800&&y2>-1) {
-				ctx.fillStyle="hsl("+ 
-				(220-(220*(map[x2][y2]-min)/height))
-				+",100%,"+17.5*(Math.cos(hr*Math.PI/12+Math.PI)+1.6)+"%)"
-				ctx.fillRect( x * 60 , y * 60  , 60 , 60)                             
-			} else {
-				ctx.fillStyle="black"
-				ctx.fillRect( x * 60 , y * 60 , 60 , 60)  
-			}                       
-                        
-			y++
-		}
-	        x++
-        }
-	var x=0
-	while (x<15) {
-                var y=0	
-	        while (y<10) {
-			var x2 = x+player.pos[0]-7
-			var y2 = y+player.pos[1]-5
-                        if (x2<800&&x2>-1&&y2<800&&y2>-1) {
-				if (objectMap[x2][y2][0] > 0) {
-                                        ctx.drawImage(sprite.object,objectMap[x2][y2][0]*60-60,0,60,60,x*60,y*60,60,60)
-				}
-				if (objectMap[x2][y2][0] > 0 && Math.abs(x-7)+Math.abs(y-5)<=5) {
-                                        ctx.fillStyle = "#f00"; ctx.fillRect(x*60, y*60-10, 60, 4)
-					ctx.fillStyle = "#0f0"; ctx.fillRect(x*60, y*60-10, 60*Math.max(0, objectMap[x2][y2][1]/objectMap[x2][y2][2]), 4)
-				}                      
-			}
-			y++
-		}
-	        x++
-        }
-	ctx.fillStyle = "white"
-	ctx.font = "17px Roboto"
+	renderObjects()
+	build()
+	ctx.fillStyle = "white";ctx.font = "21px Roboto";ctx.textAlign = "center"
+	var p,q //for loops
 	ctx.fillText(player.pos[0]+", "+player.pos[1],40,40)
 	var a = Math.floor((hr%1*60)).toString().length<2?"0"+Math.floor(hr%1*60):Math.floor(hr%1*60)
 	ctx.fillText(Math.floor(hr)+":"+a,120,40) 
@@ -223,39 +345,56 @@ function render() {
 	ctx.rotate(-Math.atan2(mousePos.x-450,mousePos.y-330)+Math.PI)
 	/*ctx.beginPath();var s = ((mousePos.x-450)**2+(mousePos.y-330)**2)**0.5;ctx.moveTo(x3+450,y3+330);ctx.lineTo(450+x3*2,330+y3*2);ctx.stroke();ctx.closePath() ;ctx.strokeStyle="#000000"*/
 	/*ctx.beginPath();ctx.arc(-1,-31,player.stats.reach,0,7);ctx.strokeStyle="#ff0000";ctx.stroke();ctx.closePath() */
+	//ctx.arc(450+51*Math.sin(-Math.atan2(mousePos.x-450,mousePos.y-330)+Math.PI),330-51*Math.cos(-Math.atan2(mousePos.x-450,mousePos.y-330)+Math.PI),40,0,7)
 	ctx.drawImage(sprite.player,-30,-30)
 	ctx.setTransform(1,0,0,1,0,0)
 	for (p in drops) {
-		ctx.drawImage(sprite.object,(drops[p].id-1)%2*60, Math.floor((drops[p].id-1)/2)*60, 60, 60, (drops[p].x-player.pos[0]+20/3)*60, (drops[p].y-player.pos[1]+14/3)*60, 40, 40)
+		ctx.drawImage(sprite.items,drops[p].id%5*60, Math.floor(drops[p].id/5)*60, 60, 60, (drops[p].x-player.pos[0]+20/3)*60, (drops[p].y-player.pos[1]+14/3)*60, 40, 40)
 		drops[p].x += drops[p].dx
 		drops[p].y += drops[p].dy
 		drops[p].dx *= drops[p].friction; drops[p].dy *= drops[p].friction
-		if (circleCollision(drops[p].x,drops[p].y,1.1/3*Math.SQRT2,player.pos[0]+0.5,player.pos[1]+0.5,Math.SQRT1_2)) {
-			drops[p].x = -100
+		drops[p].life--
+		var rarities = ["common","uncommon","rare", "epic", "legendary", "mythical"]
+		var pRC = {
+			"common": [230, 230, 230, 100],
+			"uncommon": [0, 127, 0, 100],
+			"rare": [0, 0, 166, 100],
+			"epic": [157, 30, 157, 100],
+			"legenedary": [247, 240, 28, 100],
+			"mythical": [145, 0, 0, 100],
+		}
+		if (Math.random()<0.01*2**rarities.indexOf(items[drops[p].id].rarity)) {
+		        createParticles(drops[p].x, drops[p].y, drops[p].x, drops[p].y,
+		        [2,0], [5,0.0025], -0.03, -0.03, 0.03, 0.03, pRC[items[drops[p].id].rarity], 
+		        0.003, 0.003, 1, 
+		        1.5**rarities.indexOf(items[drops[p].id].rarity), 
+		        20, 20, 0.98, 0.98)
+		}
+		if (Boolean(circleCollision(drops[p].x,drops[p].y,1/3*Math.SQRT2,player.pos[0]+0.5,player.pos[1]+0.5,Math.SQRT1_2))&&drops[p].life<=0) {
 			var j
 			for (j in inventory) {
 				if (inventory[j][0] == drops[p].id) {
-					inventory[j][1]++
+					inventory[j][1] += drops[p].amount
+					drops[p].x = -100
 					break;
 				}
 				else if (inventory[j][0] == 0) {
-					inventory[j][1]++ 
+					inventory[j][1] += drops[p].amount
 					inventory[j][0] = drops[p].id
+					drops[p].x = -100
 					break;
 				}
-                                if (j >= 8) break;
+                                if (j >= player.stats.inventorySlots-1) break;
 			}
 		}
-	}
-	drops = drops.filter(a => a.x>-1)
-	//ctx.arc(450+51*Math.sin(-Math.atan2(mousePos.x-450,mousePos.y-330)+Math.PI),330-51*Math.cos(-Math.atan2(mousePos.x-450,mousePos.y-330)+Math.PI),40,0,7)
+	} 
 	for (p in particles) {
 		var e = 0
 		while (e < particles[p].type.length) {
                         switch (particles[p].type[e]) {
 		        	case 0: particles[p].radius  +=                                  particles[p].amp[e]   ;break;//grow
 		        	case 1: particles[p].radius   = Math.max(particles[p].radius   - particles[p].amp[e],0);break;//shrink
-				case 2: particles[p].color[3] = Math.max(particles[p].color[3] - particles[p].amp[e],0);break;//fade
+				case 2: particles[p].color[3] = particles[p].color[3] - particles[p].amp[e];break;//fade
 		        }
 			e++
 	        }
@@ -277,85 +416,207 @@ function render() {
 		texts[p].dy -= 0.01
 		ctx.fillText(texts[p].content, (texts[p].x-player.pos[0]+7)*60, (texts[p].y-player.pos[1]+5)*60)
 	}
+	//filter off things
+	drops = drops.filter(a => a.x>-1)
 	particles = particles.filter(a=>a.life>0)
-	ctx.fillStyle="rgba(0,0,0,0.3)";ctx.fillRect(700,450,200,150);ctx.fillRect(0,520,640,600)
-	ctx.fillStyle="#f00";ctx.fillRect(710,460,180,25)
-	ctx.fillStyle="#0f0";ctx.fillRect(710,460,Math.max(player.stats.hp/player.stats.mhp,0)*180,25)
-	ctx.fillStyle="rgba(0,0,0,0.5)"; ctx.fillRect(710,495,180,25); ctx.fillRect(710,530,180,25); ctx.fillRect(710, 565, 180, 25)
-	ctx.fillStyle="#ff0"
-	ctx.fillRect(710,495,Math.min(Math.max(0, player.attackCooldown/150*player.stats.attackSpeed), 1)*180,25)
-	ctx.fillStyle="#0ff";ctx.fillRect(710,565,player.stats.stamina/5*9,25)
-	for (p in inventory) {
+	texts = texts.filter(a=>a.color[3]>0)
+	renderBars()
+	renderScreen()
+	ctx.font = "24px Roboto"
+	ctx.textAlign = "center"
+	for (q in inventory) {
+		if(q >= 35) break;
+		ctx.fillStyle = "rgba(255, 238, 0, 0.4)"
 		//ctx.drawImage(sprite.rick, inventory[p][0]%2*60, Math.floor(inventory[p][0]/2)*60, 60, 60, 10+70*p, 530, 60, 60)
-		ctx.drawImage(sprite.object, (inventory[p][0]-1)*60, 0, 60, 60, 10+70*p, 530, 60, 60)
-		if (inventory[p][0]) {
-			ctx.fillStyle = "#fff"
-			ctx.font = "23px Roboto";
-			ctx.fillText(inventory[p][1], 60+70*p, 595)
+                if (q < 7) {
+			if (q==holding) ctx.fillRect(70*q+5, 525, 70, 70)
+			ctx.fillStyle = rarity_colors[items[inventory[q][0]].rarity]
+			ctx.fillRect(10+70*q, 530, 60, 60)
+		        ctx.drawImage(sprite.items, inventory[q][0]%5*60, Math.floor( inventory[q][0]/5 )*60, 60, 60, 10+70*q, 530, 60, 60)
+		        if (inventory[q][0]) {
+			        ctx.fillStyle = "#fff"
+			        ctx.fillText(format(inventory[q][1]), 40+70*q, 593)
+				//10+70*q, 530
+		        }  
+	        } 
+		if (screen=="inventory") {
+			if (q > Math.min(player.stats.inventorySlots,45)-1) {
+				//ctx.fillRect( q%9*70+100, 375-Math.floor(q/9)*70, 60, 60)
+			} else {
+				ctx.fillStyle = "rgba(255, 238, 0, 0.4)"
+				if (q==holding) ctx.fillRect(q%7*70+60, 370-Math.floor(q/7)*70, 70, 70)
+				ctx.fillStyle = rarity_colors[items[inventory[q][0]].rarity]
+				ctx.fillRect(q%7*70+65, 375-Math.floor(q/7)*70, 60, 60)
+				ctx.drawImage(sprite.items, 
+				inventory[q][0]%5*60, Math.floor(inventory[q][0]/5)*60
+				, 60, 60, q%7*70+65, 375-Math.floor(q/7)*70, 60, 60)
+				ctx.fillStyle = "#fff"
+				if(inventory[q][0])ctx.fillText(format(inventory[q][1]), q%7*70+95, 438-Math.floor(q/7)*70)
+			}
 		}
-		if(p >= 8)break;
 	}
-	//var sat = (100-(map[g][h]-min)*20/height)
-            //ctx.fillStyle="hsl("+(360-((heatMap[g][h]-heatMin)/(heatMax-heatMin)*360))+",100%,"+((map[g][h]-min)/(max-min)*100)+"%)"
-         /*   ctx.fillStyle="hsl(0,0%,"+((map[g][h]-min)/(max-min)*100)+"%)"
-            ctx.fillRect(h*20+1200,g*20,20,20)
-            ctx.fillStyle="hsl("+(220-((heatMap[g][h]-heatMin)/(heatMax-heatMin)*220))+",100%,60%)"
-            ctx.fillRect(h*20+2400,g*20,20,20) */
+	if (out[0]!=0) {
+		ctx.drawImage(sprite.items, out[0]%5*60, Math.floor( out[0]/5 )*60, 60, 60, mousePos.x-30, mousePos.y-30, 60, 60)
+	        ctx.fillStyle = "#fff"
+	        ctx.fillText(format(out[1]), mousePos.x, mousePos.y+30)
+	}
+	var touched = -2
+        if (mousePos.y>=530&&mousePos.x<500&&mousePos.y<=590) {
+                if (mousePos.x%70-9>0) {
+			touched = Math.floor(mousePos.x/70)
+		}
+	} else if (mousePos.y>=95&&mousePos.x>=65&&(mousePos.y%70<15||mousePos.y%70>24)&&(mousePos.x+5)%70<60&&mousePos.x<=644&&mousePos.y<=444&&screen=="inventory") {
+                touched = Math.floor((mousePos.x-65)/70)+(4-Math.floor((mousePos.y-95)/70))*7
+	}
+	if(touched!==-2&&touched<player.stats.inventorySlots&&screen=="inventory") {
+                ctx.fillStyle = rarity_colors[items[inventory[touched][0]].rarity]
+		ctx.fillRect(640, 95, 60, 60)
+		ctx.drawImage(sprite.items, 
+		inventory[touched][0]%5*60, Math.floor(inventory[touched][0]/5)*60
+		, 60, 60, 640, 95, 60, 60)
+		ctx.fillStyle = "#000"
+		ctx.font = Math.floor(240/(items[inventory[touched][0]].name.length))+"px Roboto"
+		ctx.fillText(items[inventory[touched][0]].name,765,125)
+		ctx.font = "18px Roboto"
+		ctx.textAlign = "left"
+	        wrapText("Description: "+items[inventory[touched][0]].desc, 640, 170, 185, 17)
+	}
 }
 
-
-//semi-stationary functions
+//semi-stationary functions/variables
+var rarity_colors = {
+	"common":"rgba(230, 230, 230, 0.6)",
+	"uncommon": "rgba(0, 127, 0, 0.6)",
+	"rare": "rgba(0, 0, 166, 0.6)",
+	"epic": "rgba(157, 30, 157, 0.6)",
+	"legendary": "rgba(247, 240, 28, 0.6)",
+	"mythical": "rgba(145, 0, 0, 0.6)",
+}
+var mouseDown = [0, 0, 0, 0, 0, 0, 0, 0, 0],mouseDownCount = 0;
+var map //height map
+var heatMap //heat map
+var canvas = document.getElementById("canvas")
+var ctx = canvas.getContext("2d") //rendering
+var avg = 5 //how many times times to avg-ing (5 meaning set to avg every 5 updates)
+var max=0,min=0,heatMax=0,heatMin=0 //kinda useless (dont delete)
+var width = 200,height = 200 //width and height of map
+var day = 0
+var hr = 6
+var sprite = {
+	player: new Image(),
+	object: new Image(),
+	rick: new Image(), 
+	items: new Image()
+}
+ctx.textAlign = "center"
+ctx.textBaseline = "middle"
+sprite.player.src = "player.png"
+sprite.object.src = "object.png"
+sprite.rick.src = "rick.png"
+sprite.items.src = "items.png"
 function spawnItems(lootTable, times, x, y) {
-	var loots = [],a
+	var loots = [],a,c=0
 	//loottable format: [id n, chance n] or [id n, min n, max n]
-	for (a in lootTable) {
-		switch (lootTable[a].length) {
-			case 2:
-                                if (Math.random()<lootTable[a][1]/100) {
-					loots.push( [lootTable[a][0], 1] )
-				}
-			break;
-			case 3:
-				loots.push( [lootTable[a][0], Math.round(randomRange(lootTable[a][1], lootTable[a][2]))] )
-			break;
-		}
-	}
-	console.log(loots)
+	while (c < times) {
+	        for (a in lootTable) {
+		        switch (lootTable[a].length) {
+			        case 2:
+                                        if (Math.random()<lootTable[a][1]/100) {
+				        	loots.push( [lootTable[a][0], 1] )
+			        	}
+		        	break;
+		        	case 3:
+			        	loots.push( [lootTable[a][0], Math.round(randomRange(lootTable[a][1], lootTable[a][2]))] )
+		        	break;
+	        	}
+        	}
+		c++
+        }
 	for (a in loots) {
 		var b = 0
 		while (b < loots[a][1]) {
+			var rad = Math.random()*Math.PI*2
+			var speed = Math.random()*0.1
 			drops.push(JSON.parse(JSON.stringify({
 				id: loots[a][0],
 				x: x+0.5,
 				y: y+0.5,
-				dx: (Math.random() - 0.5) / 8,
-				dy: (Math.random() - 0.5) / 8,
-				friction: 0.97, 
+				dx: Math.sin(rad)*speed,
+				dy: Math.cos(rad)*speed,
+				friction: 0.97,
+				amount: 1,
+				life: 7, 
 			})))
 			b++
 		}
 	}
 }
 function move(e) {
-	var key = String.fromCharCode(e.which || e.keyCode).toLowerCase()
+	var key = e.which || e.keyCode
 	var dir = [0,0]
-	console.log(key)
 	switch (key) {
-                case "w": dir[1]--;break;
-		case "a": dir[0]--;break;
-		case "s": dir[1]++;break;
-		case "d": dir[0]++;break;
+                case 87 : case 119: dir[1]--;break; //w
+		case 65 : case 97 : dir[0]--;break; //a
+		case 83 : case 115: dir[1]++;break; //s
+		case 68 : case 100: dir[0]++;break; //d
+		case 49 :             holding = 0; player.attackCooldown = 0;break; //1
+		case 50 :             holding = 1; player.attackCooldown = 0;break;
+		case 51 :             holding = 2; player.attackCooldown = 0;break;
+		case 52 :             holding = 3; player.attackCooldown = 0;break;
+		case 53 :             holding = 4; player.attackCooldown = 0;break; //to
+		case 54 :             holding = 5; player.attackCooldown = 0;break;
+		case 55 :             holding = 6; player.attackCooldown = 0;break;
+		case 56 :             holding = 7; player.attackCooldown = 0;break;
+		case 57 :             holding = 8; player.attackCooldown = 0;break; //9
+		case 69 : case 101: screen=="inventory"?screen="":screen="inventory";break; //e
+		case 82 : case 114: if (screen=="crafting") {
+			screen="";screenBonus[0]=0;screenBonus[1]=1
+		} else {
+			screen="crafting";screenBonus[0]=0;screenBonus[1]=1
+		} //r
+		break;
+		//case 45: screenBonus[2]=Math.max(0,screenBonus[2]-1);break;//-
+		//case 61: screenBonus[2]++;break;//+
+		//case 37: screenBonus[1]--;break;//left arrow
+		//case 39: screenBonus[1]++;break; //right arrow
+		case 27: screen="";screenBonus[0]=0;screenBonus[1]=0;break;
 	}
-	if (player.stats.stamina>=5&&objectMap[player.pos[0]+dir[0]][player.pos[1]+dir[1]][0]==0) {
+	var x2 = player.pos[0]+dir[0]
+	var y2 = player.pos[1]+dir[1]
+	/*if (JSON.stringify(dir)!="[0,0]"&&player.stats.stamina>=5&&==0) {
                 if ( Math.random() < 1 - 
 	        Math.min(Math.abs( map[player.pos[0]][player.pos[1]] - map[player.pos[0]+dir[0]][player.pos[1]+dir[1]] ) 
 	        - player.stats.test, player.stats.test*2)/player.stats.test - Math.max( 0.3-map[player.pos[0]+dir[0]][player.pos[1]+dir[1]], 0 )*1.3
 	        ) {
-		player.pos[0] += dir[0]
-		player.pos[1] += dir[1]
+		        player.pos[0] += dir[0]
+		        player.pos[1] += dir[1]
 	        }
 		player.stats.stamina-=5
-	} //very fun to read i know
+	} //very fun to read i know */
+	if (JSON.stringify(dir)!="[0,0]") {
+		switch (objectMap[x2][y2][0]) {
+			case 0:
+			case 20:
+			case 23:
+			case 25:
+				if (player.stats.stamina>=5) {
+				        if (Math.random()<1-Math.min(Math.abs(map[player.pos[0]][player.pos[1]]-map[x2][y2])-player.stats.climbPower, player.stats.climbPower*2)/player.stats.climbPower-Math.max(0.3-map[x2][y2],0)*1.3) {
+		                                player.pos[0] += dir[0]
+		                                player.pos[1] += dir[1]
+	                                }
+		                        player.stats.stamina-=5
+			        }
+			break;
+			case 21:
+				screen = "crafting"
+				screenBonus[0] = 21
+			break;
+			case 26:
+				screen = "crafting"
+				screenBonus[0] = 26
+			break;
+		}
+	}
 	render()
 }
 function createParticles(minX, minY, maxX, maxY, type, amp, minDX, minDY, maxDX, maxDY, color, radiusMin, radiusMax, minAmount, maxAmount, minLife, maxLife, frictionMin, frictionMax) {
@@ -376,9 +637,259 @@ function createParticles(minX, minY, maxX, maxY, type, amp, minDX, minDY, maxDX,
 		i--
         }
 }
-
-
+function craftItems(recipe, amnt) {
+        var slotToPlace = 0, a, b, c, d=true, amount = amnt || 1
+	var amounts = Array(items.length).fill(0)
+	var IndxOnInv = Array(items.length).fill(-1)
+	var recipeToCraft = typeof recipe === "number" ? recipes[recipe] : recipe
+	while (slotToPlace < player.stats.inventorySlots) {
+		var b = inventory[slotToPlace][0]
+                b == recipeToCraft[2][0] || b == 0 ? a = true : 0
+		if(a)break;
+		slotToPlace++
+	}
+	if(!a)return
+	for (c in inventory) {
+		if(c>44)break;
+                amounts[inventory[c][0]] += inventory[c][1]
+		IndxOnInv[inventory[c][0]] = c
+	}
+	for (b in recipeToCraft[0]) {
+                d = d && (amounts[recipeToCraft[0][b][0]] >= recipeToCraft[0][b][1] * amount)
+	}
+	if(!d)return
+	for (b in recipeToCraft[0]) {
+                inventory[IndxOnInv[recipeToCraft[0][b][0]]][1] -= recipeToCraft[0][b][1] * amount
+		inventory[IndxOnInv[recipeToCraft[0][b][0]]][1] == 0 ? inventory[IndxOnInv[recipeToCraft[0][b][0]]][0] = 0 : 0
+	}
+	inventory[slotToPlace][0] = recipeToCraft[2][0]
+	inventory[slotToPlace][1] += recipeToCraft[2][1] * amount
+}
+function pickup(type) {
+	var touched = -2 
+	switch (type) {
+		case "inventory":
+			if (mousePos.y>=530&&mousePos.x<500&&mousePos.y<=590) {
+                                if (mousePos.x%70-9>0) {
+			                touched = Math.floor(mousePos.x/70)
+		                }
+	                }
+		        if (mousePos.y>=95&&mousePos.x>=65&&(mousePos.y%70<15||mousePos.y%70>24)&&(mousePos.x+5)%70<60&&mousePos.x<=644&&mousePos.y<=444&&screen=="inventory") {
+                                touched = Math.floor((mousePos.x-65)/70)+(4-Math.floor((mousePos.y-95)/70))*7
+	                }
+	                if(touched==-2||touched>=player.stats.inventorySlots)return true
+	                console.log(touched)              
+			var tempOut = JSON.parse(JSON.stringify(inventory[touched]))
+	                inventory[touched] = JSON.parse(JSON.stringify(out))
+	                out = JSON.parse(JSON.stringify(tempOut))              
+		break;
+		case "crafting":
+                        if (mousePos.x>=100&&mousePos.x<=790&&mousePos.y>=95&&mousePos.y<=305) {
+		                if ((mousePos.x-40)%70<60&&(mousePos.y-35)%70<60) {
+			                touched = Math.floor((mousePos.x-100)/70) + Math.floor((mousePos.y-95)/70)*10
+		                }
+	                } 
+	                return touched
+	 	break;
+	}
+}
+function updateTime() {
+        hr += 0.002
+	hr = hr.toFixed(4)
+	hr %= 24
+	if (hr==0) day++
+}
+function updateInventory() {
+	amounts=Array(items.length).fill(0),IndxOnInv=Array(items.length).fill(-1)
+        for (c in inventory) {
+	        if(c>44)break;
+                amounts[inventory[c][0]] += inventory[c][1]
+		IndxOnInv[inventory[c][0]] = c
+		unlocked[inventory[c][0]] = true 
+	}
+        inventory = JSON.parse(JSON.stringify(Array(45).fill([0,0])))
+	inventory.push([0,0,0,0])
+	for (c in IndxOnInv) {
+                if (IndxOnInv[c]>-1) {
+			inventory[IndxOnInv[c]][0] = parseInt(c)
+			inventory[IndxOnInv[c]][1] = amounts[c] 
+		}
+	 }
+}
+function updateClick() {
+	click[0] = click[1] != mouseDown[0] && mouseDown[0]==1
+	click[1] = mouseDown[0]
+}
+function renderObjects() {
+	ctx.clearRect(0,0,900,600)
+        var x=0,p,q
+        while (x<15) {
+                var y=0	
+	        while (y<10) {
+			var x2 = x+player.pos[0]-7
+			var y2 = y+player.pos[1]-5
+                        if (x2<800&&x2>-1&&y2<800&&y2>-1) {
+				ctx.fillStyle="hsl("+ 
+				(220-(220*map[x2][y2]))
+				+",100%,"+15*(Math.cos(hr*Math.PI/12+Math.PI)+1.35)+"%)"
+				ctx.fillRect( x * 60 , y * 60  , 60 , 60)                             
+			} else {
+				ctx.fillStyle="black"
+				ctx.fillRect( x * 60 , y * 60 , 60 , 60)  
+			}                       
+                        
+			y++
+		}
+	        x++
+        }
+	var x=0
+	while (x<15) {
+                var y=0
+	        while (y<10) {
+			var x2 = x+player.pos[0]-7
+			var y2 = y+player.pos[1]-5
+                        if (x2<800&&x2>-1&&y2<800&&y2>-1) {
+				if (objectMap[x2][y2][0] > 0) {
+                                        ctx.drawImage(sprite.object, (objectMap[x2][y2][0]-1)%5*60,Math.floor((objectMap[x2][y2][0]-1)/5)*60,60,60,x*60,y*60,60,60)
+				}
+				if (objectMap[x2][y2][0] > 0 && Math.abs(x-7)+Math.abs(y-5)<=5) {
+                                        ctx.fillStyle = "#f00"; ctx.fillRect(x*60, y*60-10, 60, 4)
+					ctx.fillStyle = "#0f0"; ctx.fillRect(x*60, y*60-10, 60*Math.max(0, objectMap[x2][y2][1]/objectMap[x2][y2][2]), 4)
+				}                      
+			}
+			y++
+		}
+	        x++
+        }
+}
+function renderBars() {
+	//hp, stamina, armor, ... bar
+	ctx.fillStyle="rgba(0,0,0,0.3)";ctx.fillRect(700,450,200,150)
+	//hp bar red
+	ctx.fillStyle="#f00";ctx.fillRect(710,460,180,25)
+	//hp bar green
+	ctx.fillStyle="#0f0";ctx.fillRect(710,460,Math.max(player.stats.hp/player.stats.mhp,0)*180,25)
+	ctx.fillStyle="rgba(0,0,0,0.5)"
+	ctx.fillRect(710,495,180,25) //attack bar
+	ctx.fillRect(710,530,180,25) //armor bar
+	ctx.fillRect(710, 565, 180, 25) //stamina bar
+	ctx.fillRect(0,520,500,80) //hotbar
+	//attack bar 
+	ctx.fillStyle="#ff0" 
+	ctx.fillRect(710,495,Math.min(Math.max(0, player.attackCooldown/100*player.stats.attackSpeed), 1)*180,25)
+	//stamina bar
+	ctx.fillStyle="#0ff";ctx.fillRect(710,565,player.stats.stamina/5*9,25)
+	ctx.fillStyle="#060606";ctx.font = "21px Roboto";ctx.textAlign = "center"
+	//hp bar number
+        ctx.fillText(format(player.stats.hp)+"/"+format(player.stats.mhp),800,475)
+	//attack bar number
+	ctx.fillText(Math.ceil((100-player.attackCooldown)/player.stats.attackSpeed*items[inventory[holding][0]].atkSpeed)/50+"s",800,510)
+	//armor bar
+	ctx.fillStyle="#ddd"
+	var dmgAfter = 100/(player.stats.defense+100)
+	ctx.fillRect(710,530,Math.max(0,-Math.log10(dmgAfter)%1*180),25)
+	ctx.fillStyle = "#060606"
+	if(dmgAfter>0.0001)ctx.fillText((100-dmgAfter*100).toFixed(2)+"%",800,545)
+	else ctx.fillText("1/"+format(1/dmgAfter),800,545)
+	ctx.fillText(player.stats.stamina.toFixed(0)+"%",800,580)
+}
+function renderScreen() {
+	switch (screen) {
+                case "inventory":
+			ctx.fillStyle="#221100"
+			ctx.fillRect(55, 85, 780, 360)
+			ctx.fillStyle="#442200"
+			ctx.fillRect(60, 90, 570, 350)
+			ctx.fillRect(635, 90, 195, 350)
+		break;
+		case "crafting":
+			ctx.fillStyle="#221100";ctx.fillRect(90, 85, 710, 360)
+			ctx.fillStyle="#442200";ctx.fillRect(95, 90, 700, 350)
+			var recipesToDisplay = [],k,l,m
+			var recipesToIndex = []
+			for (k in recipes) {
+				var n = true,o = false
+				for (m in recipes[k][0]) {
+                                        if (!unlocked[recipes[k][0][m][0]]) {
+						n = false
+						break;
+					}						     
+				}
+				for (l in recipes[k][1]) {
+                                        if (recipes[k][1][l] == screenBonus[0]) {
+					        o = true       
+						break;
+					}
+				}
+				if (n&&o) {
+					recipesToDisplay.push(recipes[k])
+					recipesToIndex.push(k)
+				}
+			} //get recipes to display
+			screenBonus[1] = overflowRange(0, Math.floor(recipesToDisplay.length/30), screenBonus[1])
+			for (k in recipesToDisplay) {
+				var toDisplay = k*1+screenBonus[1]*30
+				if (k>29||recipesToDisplay[toDisplay]==undefined) break;
+				ctx.fillStyle = rarity_colors[items[recipesToDisplay[toDisplay][2][0]].rarity]
+				ctx.fillRect(100+k%10*70, Math.floor(k/10)*70+95, 60, 60)
+				ctx.drawImage(sprite.items, 
+				recipesToDisplay[toDisplay][2][0]%5*60, Math.floor(recipesToDisplay[toDisplay][2][0]/5)*60
+				, 60, 60, 100+k%10*70, Math.floor(k/10)*70+95, 60, 60)
+			}
+                        var itemsHave = Array(items.length).fill(0)                     
+			for (k in inventory) {
+				if(k==45)break;
+                                itemsHave[inventory[k][0]] = inventory[k][1]
+			}
+			if (!recipesToDisplay.length) {
+				ctx.fillStyle="#000";ctx.fillText("You should get some resources...",445, 265)	
+		        } else {	     
+			        var q = pickup("crafting")
+			        if (q>-2&&q+screenBonus[1]*30<recipesToDisplay.length) {
+				        if (click[0]) {
+                                                craftItems(q+screenBonus[1]*30)
+				        }
+					for (k in recipesToDisplay[q][0]) {
+                                                ctx.fillStyle = rarity_colors[items[recipesToDisplay[q][0][k][0]].rarity]
+						ctx.fillRect(100+70*k,305,60,60)
+						ctx.drawImage(sprite.items, recipesToDisplay[q][0][k][0]%5*60, Math.floor(recipesToDisplay[q][0][k][0]/5)*60, 60, 60, 100+k*70, 305, 60, 60)
+					        ctx.fillStyle = recipesToDisplay[q][0][k][1]*10**screenBonus[2] /*amt needed*/ <= itemsHave[recipesToDisplay[q][0][k][0]] /*amt have*/ ? "#0f0" : "#f00"
+						ctx.fillText(format(recipesToDisplay[q][0][k][1]*10**screenBonus[2]),130+70*k,370)
+					}
+			        }
+			        ctx.font = "22px Roboto"
+		        }                 
+		break;
+	}
+}
+function build() {
+	var builds =  [2 ,3 ,4 ,14,15,16]
+	var objects = [21,19,20,22,23,26]
+	var index = builds.indexOf(inventory[holding][0])
+	if (index!==-1) {
+		var indexToDraw = objects[index]-1
+		var tile = [Math.floor(mousePos.x/60),Math.floor(mousePos.y/60)]
+		var x2 = tile[0]-7+player.pos[0]
+		var y2 = tile[1]-5+player.pos[1]
+		ctx.drawImage(sprite.object,indexToDraw%5*60,indexToDraw%5*60,60,60,tile[0]*60,tile[1]*60,60,60)
+	        ctx.fillStyle = "hsla("+ (220-(220*map[x2][y2]))+",100%,"+15*(Math.cos(hr*Math.PI/12+Math.PI)+1.35)+"%,0.3)"
+	        ctx.fillRect(tile[0]*60,tile[1]*60,60,60)
+		ctx.fillStyle = objectMap[x2][y2][0] == 0 ? "#0000" : "rgba(255,0,0,0.5)"
+	        ctx.fillRect(tile[0]*60,tile[1]*60,60,60) //display transparent version of object
+		if (mouseDown[2]) {
+                        if (objectMap[x2][y2][0] == 0) {
+                                objectMap[x2][y2] = [objects[index], objectHP[objects[index]], objectHP[objects[index]], {}] 
+			} //only place if target is nothing
+		} //place object
+	}
+}
 //non gameplay functions
+function overflowRange(min, max, n) {
+   var size = max-min+1
+   if (n>max) return min+(n-max)%size
+   else if (n<min) return max+(n-min)%size
+   else return n 
+}
 function repeatFunc(func,times) {
 	var a=0
 	while (a<times) {
@@ -388,13 +899,31 @@ function repeatFunc(func,times) {
 }
 function Load() { //creates the map on load
     map = baseMap(width,height)
-    heatMap = baseMap(width,height)
+    //heatMap = baseMap(width,height)
      /*81 == update times*/
     var ai
     /* for(ai in Array(8).fill(0)){
         createEntity(Math.random()*400+100,Math.random()*400+100, 40 , "phsads")
         createEntity(Math.random()*400+100,Math.random()*400+100, 220 , "phsads2")
     } */
+}
+function wrapText(text, x, y, maxWidth, lineHeight) {
+        var words = text.split(' ');
+        var line = '';
+
+        for (var n = 0; n < words.length; n++) {
+                var testLine = line + words[n] + ' ';
+                var metrics = ctx.measureText(testLine);
+                var testWidth = metrics.width;
+                if (testWidth > maxWidth && n > 0) {
+                        ctx.fillText(line, x, y);
+                        line = words[n] + ' ';
+                        y += lineHeight;
+                } else {
+                        line = testLine;
+                }
+        }
+        ctx.fillText(line, x, y);
 }
 document.body.onmousedown = function(evt) { 
   mouseDown[evt.button] = 1;
@@ -428,8 +957,12 @@ function getMousePos(event) {
     };
 } //stolem code boo boo boo boo boo boo
 function randomRange(min, max) {return Math.random()*(max-min)+min}
-
-
+function format(a) {
+    if (a<=1000) return a
+    var b = ["K","M","B","T","Qa","Qi","Sx","Sp","Oc"]
+    var c = Math.floor(Math.log10(a)/3)
+    return (a/1000**c).toFixed(2) + b[c-1]
+}
 //map generation
 function random2(a) { //random function
     var r=[seed],h=0
@@ -446,24 +979,24 @@ function RNG(seed) {
   this.c = random2(random2(43))*(2**12/100)
 
   this.state = seed ? seed : Math.floor(Math.random() * (this.m - 1));
-}
-RNG.prototype.nextInt = function() {
+  this.nextInt = function() {
   this.state = (this.a * this.state + this.c) % this.m;
   return this.state;
-}
-RNG.prototype.nextFloat = function() {
+  }
+  this.nextFloat = function() {
   // returns in range [0,1]
   return this.nextInt() / (this.m - 1);
 }
-RNG.prototype.nextRange = function(start, end) {
+  this.nextRange = function(start, end) {
   // returns in range [start, end): including start, excluding end
   // can't modulu nextInt because of weak randomness in lower bits
   var rangeSize = end - start;
   var randomUnder1 = this.nextInt() / this.m;
   return start + Math.floor(randomUnder1 * rangeSize);
 }
-RNG.prototype.choice = function(array) {
+  this.choice = function(array) {
   return array[this.nextRange(0, array.length)];
+}
 }
 var random = new RNG(seed)
 function scaleConcat(array, factor) {
@@ -481,15 +1014,7 @@ function scaleConcat(array, factor) {
 	return JSON.parse(JSON.stringify(scaled));
 }
 function baseMap(width,height) {
-    var c,d,f=[]
-    for (c in Array(height).fill(0)) {
-        var e=[]
-        for (d in Array(width).fill(0)) {
-            e.push(0)
-        }
-        f.push(e)
-    }
-    return f
+        return JSON.parse(JSON.stringify(Array(height).fill(Array(width).fill(0))))
 } //create the baseMap (a.k.a) map with width and height but no value
 function maps() {
     var y1=0
@@ -521,13 +1046,12 @@ function maps() {
                     }
                     k++
                 }
-                var red = (a,b) => a+b
-                tempMap[i][j] = neigh.reduce(red)/(neigh.length**(1-times/200))
+                tempMap[i][j] = neigh.reduce((a,b) => a+b)/(neigh.length**(1-times/200))
             }
         } //avg things out
         map = tempMap
     }
-    heatMaps() //update heatmaps
+    //heatMaps() //update heatmaps
     if (times>81){clearInterval(intv);normalize()}
 }
 function heatMaps() {
@@ -571,19 +1095,20 @@ function normalize() {
         for (y in map) {
                 for (z in map[y]) {
                         map[y][z] = (map[y][z]-min)/(max-min)
-                        heatMap[y][z] = (heatMap[y][z]-heatMin)/(heatMax-heatMin)
+                        //heatMap[y][z] = (heatMap[y][z]-heatMin)/(heatMax-heatMin)
                 }
         }
         map = scaleConcat(map, 4)
-        heatMap = scaleConcat(heatMap, 4)
+        //heatMap = scaleConcat(heatMap, 4)
 	player.pos[0] = Math.round(Math.random()*798)
         player.pos[1] = Math.round(Math.random()*798)
         while (map[player.pos[0]][player.pos[1]]<0.3) {
 	        player.pos[0] = Math.round(Math.random()*798)
 	        player.pos[1] = Math.round(Math.random()*798)
         }
-	objectMap = JSON.parse(JSON.stringify(Array(map.length).fill(Array(map[0].length).fill([0,0,0]))))
-        max=1;min=0;heatMax=1;heatMin=0 //the tile with the highest smth will be set to 1, the lowest to 0 and everything else will be in between
+	objectMap = JSON.parse(JSON.stringify(Array(map.length).fill(Array(map[0].length).fill([0,0,0,{}]))))
+        //[0] = id, [1] = hp, [2] = mhp, [3] = extra info      
+	max=1;min=0//heatMax=1;heatMin=0 //the tile with the highest smth will be set to 1, the lowest to 0 and everything else will be in between
 	repeatFunc(spawnObject,1000)
 }
 var intv = setInterval(maps,20) //useless
