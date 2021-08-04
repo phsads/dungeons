@@ -8,10 +8,10 @@
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@500&display=swap" rel="stylesheet">
 </head>
-<body onload="Load()" onkeydown="move(event)" style="text-align:center;background-color:black">
+<body onload="Load()" onkeydown="press(event)" style="text-align:center;background-color:black">
 	<canvas width="900" height="600" id="canvas" onmousemove="getMousePos(event)" style="cursor:none"></canvas>
         <canvas width="1000" height="1" id="canvas2" hidden></canvas>
-	<canvas width="1600" height="1600" id="canvas3"></canvas>
+	<canvas width="800" height="800" id="canvas3"></canvas>
 </body>
 <script>
 //non gameplay variables
@@ -30,62 +30,140 @@ var enemies = []
 var holding = 0
 var screenBonus = [0,1,0,0,0,0,0,0]
 var terrainGradient
-var maxTimes = 53
+var maxTimes = 10
+var screenShakeAmp = 0
+var screenShake = [0,0]
 var items = [
-	//name: name, mindmg, maxdmg, atkspeedmult, rarity (cosmetic), toolstrength, damagemult: [ores, trees, mobs], description
-	{name:"Nothing"           ,minDamage:2 , maxDamage:2 , atkSpeed:1   , rarity: "common", toolStrength: 0, damageMult:7, desc:"it's nothing"             },
-	{name:"Balsa Wood"        ,minDamage:2 , maxDamage:3 , atkSpeed:1   , rarity: "common", toolStrength: 0, damageMult:7, desc:"softboi"                  },
-	{name:"Workbench"         ,minDamage:2 , maxDamage:2 , atkSpeed:1   , rarity: "common", toolStrength: 0, damageMult:7, desc:"bench"                    },
-	{name:"Balsa Wall"        ,minDamage:2 , maxDamage:2 , atkSpeed:1   , rarity: "common", toolStrength: 0, damageMult:7, desc:"wall"                     },
-	{name:"Balsa Gate"        ,minDamage:2 , maxDamage:2 , atkSpeed:1   , rarity: "common", toolStrength: 0, damageMult:7, desc:"wall but gate"            },
-	{name:"Balsa Bark"        ,minDamage:0 , maxDamage:0 , atkSpeed:2   , rarity: "common", toolStrength: 0, damageMult:7, desc:"tree skin"                },
-	{name:"Balsa Handle"      ,minDamage:3 , maxDamage:4 , atkSpeed:1   , rarity: "common", toolStrength: 0, damageMult:7, desc:"softboi but handle"        },
-	{name:"Balsa Wood Pickaxe",minDamage:4 , maxDamage:5 , atkSpeed:0.9 , rarity: "common", toolStrength: 1, damageMult:5, desc:"it go mine"                },
-	{name:"Balsa Wood Axe"    ,minDamage:5 , maxDamage:6 , atkSpeed:0.9 , rarity: "common", toolStrength: 1, damageMult:3, desc:"it go chop chop"           },
-	{name:"Balsa Wood Sword"  ,minDamage:4 , maxDamage:5 , atkSpeed:1.1 , rarity: "common", toolStrength: 1, damageMult:1, desc:"it go stab"                },
-	{name:"Stone"             ,minDamage:3 , maxDamage:4 , atkSpeed:1   , rarity: "common", toolStrength: 0, damageMult:7, desc:"rocc"                      },
-	{name:"Stone Pickaxe"     ,minDamage:7 , maxDamage:9 , atkSpeed:0.9 , rarity: "common", toolStrength: 2, damageMult:5, desc:"it go mine"                },
-	{name:"Stone Axe"         ,minDamage:9 , maxDamage:11, atkSpeed:0.9 , rarity: "common", toolStrength: 2, damageMult:3, desc:"it go chop chop"           },
-	{name:"Stone Sword"       ,minDamage:7 , maxDamage:9 , atkSpeed:1.1 , rarity: "common", toolStrength: 2, damageMult:1, desc:"it go stab"                },
-	{name:"Stone Wall"        ,minDamage:2 , maxDamage:2 , atkSpeed:1   , rarity: "common", toolStrength: 0, damageMult:7, desc:"wall"                      },
-	{name:"Stone Gate"        ,minDamage:2 , maxDamage:2 , atkSpeed:1   , rarity: "common", toolStrength: 0, damageMult:7, desc:"wall but gate"             },
-	{name:"Furnace"           ,minDamage:2 , maxDamage:2 , atkSpeed:1   , rarity: "common", toolStrength: 0, damageMult:7, desc:"it go hot"                 },
-        {name:"Coal"              ,minDamage:1 , maxDamage:1 , atkSpeed:1   , rarity: "common", toolStrength: 0, damageMult:7, desc:"it's black"                },
-	{name:"Copper Ore"        ,minDamage:3 , maxDamage:4 , atkSpeed:1   , rarity: "common", toolStrength: 0, damageMult:7, desc:"it's rock but copper"      },
-	{name:"Copper Ingot"      ,minDamage:2 , maxDamage:2 , atkSpeed:1   , rarity: "common", toolStrength: 0, damageMult:7, desc:"it's copper but ingot"     },
-	{name:"Copper Pickaxe"    ,minDamage:11, maxDamage:13, atkSpeed:0.95, rarity: "common", toolStrength: 3, damageMult:5, desc:"mine"                      },
-	{name:"Copper Axe"        ,minDamage:13, maxDamage:15, atkSpeed:0.95, rarity: "common", toolStrength: 3, damageMult:3, desc:"choppy chop"               },
-	{name:"Copper Sword"      ,minDamage:11, maxDamage:13, atkSpeed:1.15, rarity: "common", toolStrength: 3, damageMult:1, desc:"ow"                        },
-	{name:"Copper Helmet"     ,minDamage:2 , maxDamage:2 , atkSpeed:1   , rarity: "common", toolStrength: 0, damageMult:7, desc:"it's upside down w"        },
-	{name:"Copper Chestplate" ,minDamage:2 , maxDamage:2 , atkSpeed:1   , rarity: "common", toolStrength: 0, damageMult:7, desc:"it's chestplate"           },
-	{name:"Copper Leggings"   ,minDamage:2 , maxDamage:2 , atkSpeed:1   , rarity: "common", toolStrength: 0, damageMult:7, desc:"it's upside down U"        },
-	{name:"Copper Boots"      ,minDamage:2 , maxDamage:2 , atkSpeed:1   , rarity: "common", toolStrength: 0, damageMult:7, desc:"it's airpods"              },
-	{name:"Iron Ore"          ,minDamage:2 , maxDamage:2 , atkSpeed:1   , rarity: "common", toolStrength: 0, damageMult:7, desc:"it's rock but iron"        },
-        {name:"Iron Ingot"        ,minDamage:2 , maxDamage:2 , atkSpeed:1   , rarity: "common", toolStrength: 0, damageMult:7, desc:"it's iron but ingot"       },
-	{name:"Copper Wall"       ,minDamage:2 , maxDamage:2 , atkSpeed:1   , rarity: "common", toolStrength: 0, damageMult:7, desc:"you can't walk through it" },
-	{name:"Copper Gate"       ,minDamage:2 , maxDamage:2 , atkSpeed:1   , rarity: "common", toolStrength: 0, damageMult:7, desc:"you can walk through it"   },
-	{name:"Anvil"             ,minDamage:2 , maxDamage:2 , atkSpeed:1   , rarity: "common", toolStrength: 0, damageMult:7, desc:"iron block"                },
-	{name:"Iron Pickaxe"      ,minDamage:20, maxDamage:28, atkSpeed:1   , rarity: "common", toolStrength: 4, damageMult:5, desc:"you can mine diamonds!"    },
-	{name:"Iron Axe"          ,minDamage:23, maxDamage:30, atkSpeed:1   , rarity: "common", toolStrength: 4, damageMult:3, desc:"you can chop red trees"    },
-	{name:"Iron Sword"        ,minDamage:20, maxDamage:28, atkSpeed:1.2 , rarity: "common", toolStrength: 4, damageMult:1, desc:"looks more like a knife"   },
-	{name:"Iron Helmet"       ,minDamage:2 , maxDamage:2 , atkSpeed:1   , rarity: "common", toolStrength: 0, damageMult:7, desc:"w but upside down"         },
-	{name:"Iron Chestplate"   ,minDamage:2 , maxDamage:2 , atkSpeed:1   , rarity: "common", toolStrength: 0, damageMult:7, desc:"it's chestplate"           },
-	{name:"Iron Leggings"     ,minDamage:2 , maxDamage:2 , atkSpeed:1   , rarity: "common", toolStrength: 0, damageMult:7, desc:"U but upside down"         },
-	{name:"Iron Boots"        ,minDamage:2 , maxDamage:2 , atkSpeed:1   , rarity: "common", toolStrength: 0, damageMult:7, desc:"airpods+"                  },
-	{name:"Iron Wall"         ,minDamage:2 , maxDamage:2 , atkSpeed:1   , rarity: "common", toolStrength: 0, damageMult:7, desc:"stone wall+"               },
-	{name:"Iron Gate"         ,minDamage:2 , maxDamage:2 , atkSpeed:1   , rarity: "common", toolStrength: 0, damageMult:7, desc:"stone gate+"               },
-	{name:"Steel Ingot"       ,minDamage:2 , maxDamage:2 , atkSpeed:1   , rarity: "common", toolStrength: 0, damageMult:7, desc:"iron ingot but better"     },
-	{name:"Wood Chest"        ,minDamage:2 , maxDamage:2 , atkSpeed:1   , rarity: "common", toolStrength: 0, damageMult:7, desc:"it can store things"       },
-	{name:"Steel Pickaxe"     ,minDamage:32, maxDamage:42, atkSpeed:1.04, rarity: "common", toolStrength: 5, damageMult:5, desc:"iron pickaxe but better"   },
-	{name:"Steel Axe"         ,minDamage:38, maxDamage:51, atkSpeed:1.04, rarity: "common", toolStrength: 5, damageMult:3, desc:"iron axe but better"       },
-	{name:"Steel Sword"       ,minDamage:32, maxDamage:42, atkSpeed:1.23, rarity: "common", toolStrength: 5, damageMult:1, desc:"looks like an actual knife"},
-	{name:"Steel Helmet"      ,minDamage:2 , maxDamage:2 , atkSpeed:1   , rarity: "common", toolStrength: 0, damageMult:7, desc:"it's still upside down w"  },
-	{name:"Steel Chestplate"  ,minDamage:2 , maxDamage:2 , atkSpeed:1   , rarity: "common", toolStrength: 0, damageMult:7, desc:"it's still chestplate"     },
-	{name:"Steel Leggings"    ,minDamage:2 , maxDamage:2 , atkSpeed:1   , rarity: "common", toolStrength: 0, damageMult:7, desc:"it's still upside down U"  },
-	{name:"Steel Boots"       ,minDamage:2 , maxDamage:2 , atkSpeed:1   , rarity: "common", toolStrength: 0, damageMult:7, desc:"it looks like airpods"     },
-	{name:"Steel Wall"        ,minDamage:2 , maxDamage:2 , atkSpeed:1   , rarity: "common", toolStrength: 0, damageMult:7, desc:"iron wall but steel"       },
-	{name:"Steel Gate"        ,minDamage:2 , maxDamage:2 , atkSpeed:1   , rarity: "common", toolStrength: 0, damageMult:7, desc:"steel wall but gate"       },
-	{name:"Steel Chest"       ,minDamage:2 , maxDamage:2 , atkSpeed:1   , rarity: "common", toolStrength: 0, damageMult:7, desc:"more storage because steel"},
+	//name: name, mindmg, maxdmg, atkspeedmult, rarity (cosmetic), toolstrength, damagemult: [ores, trees, mobs], description 
+	{name:"Nothing"               ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "common"  , toolStrength: 0, defense: 0    ,damageMult:7, desc:"it's nothing"              },
+	{name:"Balsa Wood"            ,minDamage:2   , maxDamage:3   , atkSpeed:1   , rarity: "common"  , toolStrength: 0, defense: 0    ,damageMult:7, desc:"softboi"                   },
+	{name:"Workbench"             ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "common"  , toolStrength: 0, defense: 0    ,damageMult:7, desc:"bench"                     },
+	{name:"Balsa Wall"            ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "common"  , toolStrength: 0, defense: 0    ,damageMult:7, desc:"wall"                      },
+	{name:"Balsa Gate"            ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "common"  , toolStrength: 0, defense: 0    ,damageMult:7, desc:"wall but gate"             },
+	{name:"Balsa Bark"            ,minDamage:0   , maxDamage:0   , atkSpeed:2   , rarity: "common"  , toolStrength: 0, defense: 0    ,damageMult:7, desc:"tree skin"                 },
+	{name:"Balsa Handle"          ,minDamage:3   , maxDamage:4   , atkSpeed:1   , rarity: "common"  , toolStrength: 0, defense: 0    ,damageMult:7, desc:"softboi but handle"        },
+	{name:"Balsa Wood Pickaxe"    ,minDamage:4   , maxDamage:5   , atkSpeed:0.9 , rarity: "common"  , toolStrength: 1, defense: 0    ,damageMult:5, desc:"it go mine"                },
+	{name:"Balsa Wood Axe"        ,minDamage:5   , maxDamage:6   , atkSpeed:0.85, rarity: "common"  , toolStrength: 1, defense: 0    ,damageMult:3, desc:"it go chop chop"           },
+	{name:"Balsa Wood Sword"      ,minDamage:4   , maxDamage:5   , atkSpeed:1.1 , rarity: "common"  , toolStrength: 1, defense: 0    ,damageMult:1, desc:"it go stab"                },
+	{name:"Stone"                 ,minDamage:3   , maxDamage:4   , atkSpeed:1   , rarity: "common"  , toolStrength: 0, defense: 0    ,damageMult:7, desc:"rocc"                      },
+	{name:"Stone Pickaxe"         ,minDamage:7   , maxDamage:9   , atkSpeed:0.9 , rarity: "common"  , toolStrength: 2, defense: 0    ,damageMult:5, desc:"it go mine"                },
+	{name:"Stone Axe"             ,minDamage:9   , maxDamage:11  , atkSpeed:0.85, rarity: "common"  , toolStrength: 2, defense: 0    ,damageMult:3, desc:"it go chop chop"           },
+	{name:"Stone Sword"           ,minDamage:7   , maxDamage:9   , atkSpeed:1.1 , rarity: "common"  , toolStrength: 2, defense: 0    ,damageMult:1, desc:"it go stab"                },
+	{name:"Stone Wall"            ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "common"  , toolStrength: 0, defense: 0    ,damageMult:7, desc:"wall"                      },
+	{name:"Stone Gate"            ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "common"  , toolStrength: 0, defense: 0    ,damageMult:7, desc:"wall but gate"             },
+	{name:"Furnace"               ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "common"  , toolStrength: 0, defense: 0    ,damageMult:7, desc:"it go hot"                 },
+        {name:"Coal"                  ,minDamage:1   , maxDamage:1   , atkSpeed:1   , rarity: "common"  , toolStrength: 0, defense: 0    ,damageMult:7, desc:"it's black"                },
+	{name:"Copper Ore"            ,minDamage:3   , maxDamage:4   , atkSpeed:1   , rarity: "common"  , toolStrength: 0, defense: 0    ,damageMult:7, desc:"it's rock but copper"      },
+	{name:"Copper Ingot"          ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "common"  , toolStrength: 0, defense: 0    ,damageMult:7, desc:"it's copper but ingot"     },
+	{name:"Copper Pickaxe"        ,minDamage:11  , maxDamage:13  , atkSpeed:0.95, rarity: "common"  , toolStrength: 3, defense: 0    ,damageMult:5, desc:"mine"                      },
+	{name:"Copper Axe"            ,minDamage:13  , maxDamage:15  , atkSpeed:0.9 , rarity: "common"  , toolStrength: 3, defense: 0    ,damageMult:3, desc:"choppy chop"               },
+	{name:"Copper Sword"          ,minDamage:11  , maxDamage:13  , atkSpeed:1.15, rarity: "common"  , toolStrength: 3, defense: 0    ,damageMult:1, desc:"ow"                        },
+	{name:"Copper Helmet"         ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "common"  , toolStrength: 0, defense: 5    ,damageMult:7, desc:"it's upside down w"        },
+	{name:"Copper Chestplate"     ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "common"  , toolStrength: 0, defense: 15   ,damageMult:7, desc:"it's chestplate"           },
+	{name:"Copper Leggings"       ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "common"  , toolStrength: 0, defense: 10   ,damageMult:7, desc:"it's upside down U"        },
+	{name:"Copper Boots"          ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "common"  , toolStrength: 0, defense: 5    ,damageMult:7, desc:"it's airpods"              },
+	{name:"Iron Ore"              ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "common"  , toolStrength: 0, defense: 0    ,damageMult:7, desc:"it's rock but iron"        },
+        {name:"Iron Ingot"            ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "common"  , toolStrength: 0, defense: 0    ,damageMult:7, desc:"it's iron but ingot"       },
+	{name:"Copper Wall"           ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "common"  , toolStrength: 0, defense: 0    ,damageMult:7, desc:"you can't walk through it" },
+	{name:"Copper Gate"           ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "common"  , toolStrength: 0, defense: 0    ,damageMult:7, desc:"you can walk through it"   },
+	{name:"Anvil"                 ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "common"  , toolStrength: 0, defense: 0    ,damageMult:7, desc:"iron block"                },
+	{name:"Iron Pickaxe"          ,minDamage:20  , maxDamage:28  , atkSpeed:1   , rarity: "common"  , toolStrength: 4, defense: 0    ,damageMult:5, desc:"you can mine diamonds!"    },
+	{name:"Iron Axe"              ,minDamage:23  , maxDamage:30  , atkSpeed:0.95, rarity: "common"  , toolStrength: 4, defense: 0    ,damageMult:3, desc:"you can chop red trees"    },
+	{name:"Iron Sword"            ,minDamage:20  , maxDamage:28  , atkSpeed:1.2 , rarity: "common"  , toolStrength: 4, defense: 0    ,damageMult:1, desc:"looks more like a knife"   },
+	{name:"Iron Helmet"           ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "common"  , toolStrength: 0, defense: 10   ,damageMult:7, desc:"w but upside down"         },
+	{name:"Iron Chestplate"       ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "common"  , toolStrength: 0, defense: 30   ,damageMult:7, desc:"it's chestplate"           },
+	{name:"Iron Leggings"         ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "common"  , toolStrength: 0, defense: 20   ,damageMult:7, desc:"U but upside down"         },
+	{name:"Iron Boots"            ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "common"  , toolStrength: 0, defense: 10   ,damageMult:7, desc:"airpods+"                  },
+	{name:"Iron Wall"             ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "common"  , toolStrength: 0, defense: 0    ,damageMult:7, desc:"stone wall+"               },
+	{name:"Iron Gate"             ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "common"  , toolStrength: 0, defense: 0    ,damageMult:7, desc:"stone gate+"               },
+	{name:"Steel Ingot"           ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "common"  , toolStrength: 0, defense: 0    ,damageMult:7, desc:"iron ingot but better"     },
+	{name:"Wood Chest"            ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "common"  , toolStrength: 0, defense: 0    ,damageMult:7, desc:"it can store things"       },
+	{name:"Steel Pickaxe"         ,minDamage:32  , maxDamage:42  , atkSpeed:1.04, rarity: "common"  , toolStrength: 5, defense: 0    ,damageMult:5, desc:"iron pickaxe but better"   },
+	{name:"Steel Axe"             ,minDamage:38  , maxDamage:51  , atkSpeed:0.99, rarity: "common"  , toolStrength: 5, defense: 0    ,damageMult:3, desc:"iron axe but better"       },
+	{name:"Steel Sword"           ,minDamage:32  , maxDamage:42  , atkSpeed:1.23, rarity: "common"  , toolStrength: 5, defense: 0    ,damageMult:1, desc:"looks like an actual knife"},
+	{name:"Steel Helmet"          ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "common"  , toolStrength: 0, defense: 20   ,damageMult:7, desc:"it's still upside down w"  },
+	{name:"Steel Chestplate"      ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "common"  , toolStrength: 0, defense: 60   ,damageMult:7, desc:"it's still chestplate"     },
+	{name:"Steel Leggings"        ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "common"  , toolStrength: 0, defense: 40   ,damageMult:7, desc:"it's still upside down U"  },
+	{name:"Steel Boots"           ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "common"  , toolStrength: 0, defense: 20   ,damageMult:7, desc:"it looks like airpods"     },
+	{name:"Steel Wall"            ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "common"  , toolStrength: 0, defense: 0    ,damageMult:7, desc:"iron wall but steel"       },
+	{name:"Steel Gate"            ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "common"  , toolStrength: 0, defense: 0    ,damageMult:7, desc:"steel wall but gate"       },
+	{name:"Steel Chest"           ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "common"  , toolStrength: 0, defense: 0    ,damageMult:7, desc:"more storage because steel"},
+	{name:"Platinum Ore"          ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "uncommon", toolStrength: 0, defense: 0    ,damageMult:7, desc:"those aren't diamonds :("  },
+        {name:"Platinum Ingot "       ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "uncommon", toolStrength: 0, defense: 0    ,damageMult:7, desc:"it's good but not diamonds"},
+	{name:"Platinum Pickaxe"      ,minDamage:40  , maxDamage:55  , atkSpeed:1.05, rarity: "uncommon", toolStrength: 5, defense: 0    ,damageMult:5, desc:"let's pretend it's diamond"},
+	{name:"Platinum Axe"          ,minDamage:45  , maxDamage:65  , atkSpeed:1   , rarity: "uncommon", toolStrength: 5, defense: 0    ,damageMult:3, desc:"let's pretend it's diamond"},
+	{name:"Platinum Sword"        ,minDamage:40  , maxDamage:55  , atkSpeed:1.25, rarity: "uncommon", toolStrength: 5, defense: 0    ,damageMult:1, desc:"diamond blade, very cool"  },
+	{name:"Platinum Helmet"       ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "uncommon", toolStrength: 0, defense: 40   ,damageMult:7, desc:"it's still upside down w"  },
+	{name:"Platinum Chestplate"   ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "uncommon", toolStrength: 0, defense: 120  ,damageMult:7, desc:"it's still chestplate"     },
+	{name:"Platinum Leggings"     ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "uncommon", toolStrength: 0, defense: 80   ,damageMult:7, desc:"it's still upside down U"  },
+	{name:"Platinum Boots"        ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "uncommon", toolStrength: 0, defense: 40   ,damageMult:7, desc:"it looks like airpods"     },
+	{name:"Platinum Wall"         ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "uncommon", toolStrength: 0, defense: 0    ,damageMult:7, desc:"diamond block"             },
+	{name:"Platinum Gate"         ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "uncommon", toolStrength: 0, defense: 0    ,damageMult:7, desc:"diamond gate"              },
+	{name:"Maple Wood"            ,minDamage:2   , maxDamage:3   , atkSpeed:1   , rarity: "uncommon", toolStrength: 0, defense: 0    ,damageMult:7, desc:"gray boi"                  },
+	{name:"Maple Handle"          ,minDamage:3   , maxDamage:4   , atkSpeed:1   , rarity: "uncommon", toolStrength: 0, defense: 0    ,damageMult:7, desc:"gray boi but handle"       },
+	{name:"Maple Wall"            ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "uncommon", toolStrength: 0, defense: 0    ,damageMult:7, desc:"wall"                      },
+	{name:"Maple Gate"            ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "uncommon", toolStrength: 0, defense: 0    ,damageMult:7, desc:"wall but gate"             },
+	{name:"Mithril Ore"           ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "uncommon", toolStrength: 0, defense: 0    ,damageMult:7, desc:"dark diamonds"             },
+        {name:"Mithril Ingot"         ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "uncommon", toolStrength: 0, defense: 0    ,damageMult:7, desc:"igot"                      },
+	{name:"Mithril Pickaxe"       ,minDamage:70  , maxDamage:90  , atkSpeed:1.1 , rarity: "uncommon", toolStrength: 6, defense: 0    ,damageMult:5, desc:"looks like a hammer"       },
+	{name:"Mithril Axe"           ,minDamage:85  , maxDamage:110 , atkSpeed:1.05, rarity: "uncommon", toolStrength: 6, defense: 0    ,damageMult:3, desc:"chop chop"                 },
+	{name:"Mithril Sword"         ,minDamage:70  , maxDamage:90  , atkSpeed:1.3 , rarity: "uncommon", toolStrength: 0, defense: 0    ,damageMult:1, desc:"very cool sword"           },
+	{name:"Mithril Helmet"        ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "uncommon", toolStrength: 0, defense: 80   ,damageMult:7, desc:"it's still upside down w"  },
+	{name:"Mithril Chestplate"    ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "uncommon", toolStrength: 0, defense: 240  ,damageMult:7, desc:"it's still chestplate"     },
+	{name:"Mithril Leggings"      ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "uncommon", toolStrength: 0, defense: 160  ,damageMult:7, desc:"it's still upside down U"  },
+	{name:"Mithril Boots"         ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "uncommon", toolStrength: 0, defense: 80   ,damageMult:7, desc:"it looks like airpods"     },
+	{name:"Mithril Wall"          ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "uncommon", toolStrength: 0, defense: 0    ,damageMult:7, desc:"block"                     },
+	{name:"Mithril Gate"          ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "uncommon", toolStrength: 0, defense: 0    ,damageMult:7, desc:"gate"                      },
+	{name:"Birch Wood"            ,minDamage:2   , maxDamage:3   , atkSpeed:1   , rarity: "uncommon", toolStrength: 0, defense: 0    ,damageMult:7, desc:"whiteboi"                  },
+	{name:"Birch Handle"          ,minDamage:3   , maxDamage:4   , atkSpeed:1   , rarity: "uncommon", toolStrength: 0, defense: 0    ,damageMult:7, desc:"whiteboi but handle"       },
+	{name:"Birch Wall"            ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "uncommon", toolStrength: 0, defense: 0    ,damageMult:7, desc:"wall"                      },
+	{name:"Birch Gate"            ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "uncommon", toolStrength: 0, defense: 0    ,damageMult:7, desc:"wall but gate"             },
+	{name:"Adamantite Ore"        ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "rare"    , toolStrength: 0, defense: 0    ,damageMult:7, desc:"budget emerald"            },
+        {name:"Adamantite Ingot"      ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "rare"    , toolStrength: 0, defense: 0    ,damageMult:7, desc:"igot"                      },
+	{name:"Adamantite Pickaxe"    ,minDamage:120 , maxDamage:150 , atkSpeed:1.15, rarity: "rare"    , toolStrength: 7, defense: 0    ,damageMult:5, desc:"looks like a hammer"       },
+	{name:"Adamantite Axe"        ,minDamage:135 , maxDamage:169 , atkSpeed:1.1 , rarity: "rare"    , toolStrength: 7, defense: 0    ,damageMult:3, desc:"chop chop"                 },
+	{name:"Adamantite Sword"      ,minDamage:120 , maxDamage:150 , atkSpeed:1.35, rarity: "rare"    , toolStrength: 0, defense: 0    ,damageMult:1, desc:"even cooler sword"         },
+	{name:"Adamantite Helmet"     ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "rare"    , toolStrength: 0, defense: 160  ,damageMult:7, desc:"it's still upside down w"  },
+	{name:"Adamantite Chestplate" ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "rare"    , toolStrength: 0, defense: 480  ,damageMult:7, desc:"it's still chestplate"     },
+	{name:"Adamantite Leggings"   ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "rare"    , toolStrength: 0, defense: 320  ,damageMult:7, desc:"it's still upside down U"  },
+	{name:"Adamantite Boots"      ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "rare"    , toolStrength: 0, defense: 160  ,damageMult:7, desc:"it looks like airpods"     },
+	{name:"Adamantite Wall"       ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "rare"    , toolStrength: 0, defense: 0    ,damageMult:7, desc:"block"                     },
+	{name:"Adamantite Gate"       ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "rare"    , toolStrength: 0, defense: 0    ,damageMult:7, desc:"gate"                      },
+	{name:"Titanium Ore"          ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "rare"    , toolStrength: 0, defense: 0    ,damageMult:7, desc:"looks like a titan"        },
+        {name:"Titanium Ingot"        ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "rare"    , toolStrength: 0, defense: 0    ,damageMult:7, desc:"like your mom"             },
+	{name:"Titanium Pickaxe"      ,minDamage:200 , maxDamage:300 , atkSpeed:1.2 , rarity: "rare"    , toolStrength: 8, defense: 0    ,damageMult:5, desc:"looks like a hammer"       },
+	{name:"Titanium Axe"          ,minDamage:240 , maxDamage:350 , atkSpeed:1.15, rarity: "rare"    , toolStrength: 8, defense: 0    ,damageMult:3, desc:"chop chop"                 },
+	{name:"Titanium Sword"        ,minDamage:200 , maxDamage:300 , atkSpeed:1.4 , rarity: "rare"    , toolStrength: 0, defense: 0    ,damageMult:1, desc:"even cooler sword"         },
+	{name:"Titanium Helmet"       ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "rare"    , toolStrength: 0, defense: 320  ,damageMult:7, desc:"gooder iron armor"         },
+	{name:"Titanium Chestplate"   ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "rare"    , toolStrength: 0, defense: 960  ,damageMult:7, desc:"it's still chestplate"     },
+	{name:"Titanium Leggings"     ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "rare"    , toolStrength: 0, defense: 640  ,damageMult:7, desc:"it's still upside down U"  },
+	{name:"Titanium Boots"        ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "rare"    , toolStrength: 0, defense: 320  ,damageMult:7, desc:"it looks like airpods"     },
+	{name:"Titanium Wall"         ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "rare"    , toolStrength: 0, defense: 0    ,damageMult:7, desc:"block"                     },
+	{name:"Titanium Gate"         ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "rare"    , toolStrength: 0, defense: 0    ,damageMult:7, desc:"gate"                      },
+	{name:"Pine Wood"             ,minDamage:2   , maxDamage:3   , atkSpeed:1   , rarity: "epic"    , toolStrength: 0, defense: 0    ,damageMult:7, desc:"darkboi"                   },
+	{name:"Pine Handle"           ,minDamage:3   , maxDamage:4   , atkSpeed:1   , rarity: "epic"    , toolStrength: 0, defense: 0    ,damageMult:7, desc:"darkboi but handle"        },
+	{name:"Unobtainium Ore"       ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "epic"    , toolStrength: 0, defense: 0    ,damageMult:7, desc:"glow in the dark"          },
+        {name:"Unobtainium Ingot"     ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "epic"    , toolStrength: 0, defense: 0    ,damageMult:7, desc:"uranu"                     },
+	{name:"Unobtainium Pickaxe"   ,minDamage:666 , maxDamage:777 , atkSpeed:1.25, rarity: "epic"    , toolStrength: 9, defense: 0    ,damageMult:5, desc:"looks like a hammer"       },
+	{name:"Unobtainium Axe"       ,minDamage:789 , maxDamage:891 , atkSpeed:1.2 , rarity: "epic"    , toolStrength: 9, defense: 0    ,damageMult:3, desc:"yay better hammer"         },
+	{name:"Unobtainium Sword"     ,minDamage:666 , maxDamage:777 , atkSpeed:1.45, rarity: "epic"    , toolStrength: 0, defense: 0    ,damageMult:1, desc:"feels like a toy"          },
+	{name:"Unobtainium Helmet"    ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "epic"    , toolStrength: 0, defense: 640  ,damageMult:7, desc:"it's still upside down w"  },
+	{name:"Unobtainium Chestplate",minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "epic"    , toolStrength: 0, defense: 1920 ,damageMult:7, desc:"it's still chestplate"     },
+	{name:"Unobtainium Leggings"  ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "epic"    , toolStrength: 0, defense: 1280 ,damageMult:7, desc:"it's still upside down U"  },
+	{name:"Unobtainium Boots"     ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "epic"    , toolStrength: 0, defense: 640  ,damageMult:7, desc:"it looks like airpods"     },
+	{name:"Unobtainium Wall"      ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "epic"    , toolStrength: 0, defense: 0    ,damageMult:7, desc:"block"                     },
+	{name:"Unobtainium Gate"      ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "epic"    , toolStrength: 0, defense: 0    ,damageMult:7, desc:"gate"                      },
+	{name:"Raw Crystal"           ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity:"legendary", toolStrength: 0, defense: 0    ,damageMult:7, desc:"shiny"                     },
+	{name:"Crystal Pickaxe"       ,minDamage:1300, maxDamage:2000, atkSpeed:1.3 , rarity:"legendary", toolStrength:10, defense: 0    ,damageMult:5, desc:"shiny hammer"              },
+	{name:"Crystal Axe"           ,minDamage:1700, maxDamage:2500, atkSpeed:1.25, rarity:"legendary", toolStrength:10, defense: 0    ,damageMult:3, desc:"shiny chop chop"           },
+	{name:"Crystal Sword"         ,minDamage:1300, maxDamage:2000, atkSpeed:1.5 , rarity:"legendary", toolStrength: 0, defense: 0    ,damageMult:1, desc:"crystal edge"              },
+	{name:"Crystal Helmet"        ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity:"legendary", toolStrength: 0, defense: 1280 ,damageMult:7, desc:"nice color scheme"         },
+	{name:"Crystal Chestplate"    ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity:"legendary", toolStrength: 0, defense: 3840 ,damageMult:7, desc:"very cool"                 },
+	{name:"Crystal Leggings"      ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity:"legendary", toolStrength: 0, defense: 2560 ,damageMult:7, desc:"it protec leg"             },
+	{name:"Crystal Boots"         ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity:"legendary", toolStrength: 0, defense: 1280 ,damageMult:7, desc:"it protec foot"            },
+	{name:"Crystal Wall"          ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity:"legendary", toolStrength: 0, defense: 0    ,damageMult:7, desc:"block"                     },
+	{name:"Crystal Gate"          ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity:"legendary", toolStrength: 0, defense: 0    ,damageMult:7, desc:"gate"                      },
+        {name:"Torch"                 ,minDamage:2   , maxDamage:3   , atkSpeed:1   , rarity: "common"  , toolStrength: 0, defense: 0    ,damageMult:7, desc:"hotboi"                    },
 ]
 var unlocked = Array(items.length).fill(false)
 var recipes = [
@@ -125,7 +203,7 @@ var recipes = [
 	[   [[28, 5 ]                    ] , [22   ] , [38, 1]  ], //iron boots
 	[   [[28, 6 ]                    ] , [22   ] , [39, 1]  ], //rion wall
 	[   [[28, 6 ]                    ] , [22   ] , [40, 1]  ], //iron gate
-	[   [[28, 3 ] , [17, 5]          ] , [21   ] , [41, 1]  ], //steel ingot
+	[   [[28, 3 ] , [17, 5]          ] , [22   ] , [41, 1]  ], //steel ingot
 	[   [[1 , 12] , [10, 6]          ] , [16   ] , [42, 1]  ], //chest
 	[   [[32, 1 ] , [41, 5]          ] , [22   ] , [43, 1]  ], //steel pick
 	[   [[33, 1 ] , [41, 7]          ] , [22   ] , [44, 1]  ], //steel axe
@@ -136,7 +214,74 @@ var recipes = [
 	[   [[41, 2 ] , [35, 1]          ] , [22   ] , [49, 1]  ], //iron boots
 	[   [[41, 6 ]                    ] , [22   ] , [50, 1]  ], //steel wall
 	[   [[41, 6 ]                    ] , [22   ] , [51, 1]  ], //steel gate
-	[   [[28, 8] , [41, 4]           ] , [16   ] , [52, 1]  ], //steel chest
+	[   [[28, 8]  , [41, 4]          ] , [16   ] , [52, 1]  ], //steel chest
+	[   [[53, 1 ] , [17, 4]          ] , [21   ] , [54, 1]  ], //platinum ingot
+	[   [[65, 1 ] , [54, 8]          ] , [22   ] , [55, 1]  ], //platinum pick
+	[   [[65, 1 ] , [54, 8]          ] , [22   ] , [56, 1]  ], //platinum axe
+	[   [[65, 1 ] , [54, 7]          ] , [22   ] , [57, 1]  ], //platinum sword
+	[   [[54, 5 ]                    ] , [22   ] , [58, 1]  ], //platinum helm
+	[   [[54, 15]                    ] , [22   ] , [59, 1]  ], //platinum chestplate
+	[   [[54, 10]                    ] , [22   ] , [60, 1]  ], //platinum leggings
+	[   [[54, 5 ]                    ] , [22   ] , [61, 1]  ], //platinum boots
+	[   [[54, 6 ]                    ] , [22   ] , [62, 1]  ], //platinum wall
+	[   [[54, 6 ]                    ] , [22   ] , [63, 1]  ], //platinum gate
+	[   [[64, 3 ]                    ] , [16   ] , [65, 1]  ], //maple handle
+	[   [[64, 6 ]                    ] , [16   ] , [66, 1]  ], //maple wall
+	[   [[64, 6 ]                    ] , [16   ] , [67, 1]  ], //maple gate
+	[   [[68, 1 ] , [17, 5]          ] , [21   ] , [69, 1]  ], //mithril ingot
+	[   [[55, 1 ] , [69, 5]          ] , [22   ] , [70, 1]  ], //mithril pick
+	[   [[56, 1 ] , [69, 5]          ] , [22   ] , [71, 1]  ], //mithril axe
+	[   [[57, 1 ] , [69, 4]          ] , [22   ] , [72, 1]  ], //mithril sword
+	[   [[69, 5 ]                    ] , [22   ] , [73, 1]  ], //mithril helm
+	[   [[69, 15]                    ] , [22   ] , [74, 1]  ], //mithril chestplate
+	[   [[69, 10]                    ] , [22   ] , [75, 1]  ], //mithril leggings
+	[   [[69, 5 ]                    ] , [22   ] , [76, 1]  ], //mithril boots
+	[   [[69, 6 ]                    ] , [22   ] , [77, 1]  ], //mithril wall
+	[   [[69, 6 ]                    ] , [22   ] , [78, 1]  ], //mithril gate
+	[   [[79, 4 ]                    ] , [16   ] , [80, 1]  ], //birch handle
+	[   [[79, 6 ]                    ] , [16   ] , [81, 1]  ], //birch wall
+	[   [[79, 6 ]                    ] , [16   ] , [82, 1]  ], //birch gate
+	[   [[83, 1 ] , [17, 5]          ] , [21   ] , [84, 1]  ], //adamantite ingot
+	[   [[80, 1 ] , [84, 9]          ] , [22   ] , [85, 1]  ], //adamantite pick
+	[   [[80, 1 ] , [84, 9]          ] , [22   ] , [86, 1]  ], //adamantite axe
+	[   [[80, 1 ] , [84, 8]          ] , [22   ] , [87, 1]  ], //adamantite sword
+	[   [[84, 5 ]                    ] , [22   ] , [88, 1]  ], //adamantite helm
+	[   [[84, 15]                    ] , [22   ] , [89, 1]  ], //adamantite chestplate
+	[   [[84, 10]                    ] , [22   ] , [90, 1]  ], //adamantite leggings
+	[   [[84, 5 ]                    ] , [22   ] , [91, 1]  ], //adamantite boots
+	[   [[84, 6 ]                    ] , [22   ] , [92, 1]  ], //adamantite wall
+	[   [[84, 6 ]                    ] , [22   ] , [93, 1]  ], //adamantite gate
+	[   [[94, 1 ] , [17, 6]          ] , [21   ] , [95, 1]  ], //titanium ingot
+	[   [[85, 1 ] , [95, 6]          ] , [22   ] , [96, 1]  ], //titanium pick
+	[   [[86, 1 ] , [95, 6]          ] , [22   ] , [97, 1]  ], //titanium axe
+	[   [[87, 1 ] , [95, 5]          ] , [22   ] , [98, 1]  ], //titanium sword
+	[   [[95, 5 ]                    ] , [22   ] , [99, 1]  ], //titanium helm
+	[   [[95, 15]                    ] , [22   ] , [100, 1]  ], //titanium chestplate
+	[   [[95, 10]                    ] , [22   ] , [101, 1]  ], //titanium leggings
+	[   [[95, 5 ]                    ] , [22   ] , [102, 1]  ], //titanium boots
+	[   [[95, 6 ]                    ] , [22   ] , [103, 1]  ], //titanium wall
+	[   [[95, 6 ]                    ] , [22   ] , [104, 1]  ], //titanium gate
+	[   [[105, 5]                    ] , [16   ] , [106, 1]  ], //pine handle
+	[   [[107, 1] , [17, 6]          ] , [21   ] , [108, 1]  ], //unob ingot
+	[   [[106, 1] , [108, 10]        ] , [22   ] , [109, 1]  ], //unob pick
+	[   [[106, 1] , [108, 10]        ] , [22   ] , [110, 1]  ], //unob axe
+	[   [[106, 1] , [108, 9]         ] , [22   ] , [111, 1]  ], //unob sword
+	[   [[108, 5 ]                   ] , [22   ] , [112, 1]  ], //unob helm
+	[   [[108, 15]                   ] , [22   ] , [113, 1]  ], //unob chestplate
+	[   [[108, 10]                   ] , [22   ] , [114, 1]  ], //unob leggings
+	[   [[108, 5 ]                   ] , [22   ] , [115, 1]  ], //unob boots
+	[   [[108, 6 ]                   ] , [22   ] , [116, 1]  ], //unob wall
+	[   [[108, 6 ]                   ] , [22   ] , [117, 1]  ], //unob gate
+	[   [[106, 1] , [108, 15]        ] , [22   ] , [119, 1]  ], //crystal pick
+	[   [[106, 1] , [108, 15]        ] , [22   ] , [120, 1]  ], //crystal axe
+	[   [[106, 1] , [108, 15]        ] , [22   ] , [121, 1]  ], //crystal sword
+	[   [[108, 10]                   ] , [22   ] , [122, 1]  ], //crystal helm
+	[   [[108, 25]                   ] , [22   ] , [123, 1]  ], //crystal chestplate
+	[   [[108, 15]                   ] , [22   ] , [124, 1]  ], //crystal leggings
+	[   [[108, 10]                   ] , [22   ] , [125, 1]  ], //crystal boots
+	[   [[108, 7 ]                   ] , [22   ] , [126, 1]  ], //crystal wall
+	[   [[108, 7 ]                   ] , [22   ] , [127, 1]  ], //crystal gate
+	[   [[6 ,  1 ] , [17, 1]         ] , [21   ] , [128, 1]  ], //torch
 ]
 var inventory = [
 	[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],
@@ -152,15 +297,15 @@ var lootTables = [
 	[[10, 3, 5]                      ], //stone
 	[[18, 2, 3], [10, 80], [10, 100] ], //copper ore
 	[[27, 2, 3], [10, 80], [10, 100] ], //iron ore
-	[], //maple
-	[], //platinum
-	[], //mithril
-	[], //birch
-	[], //adamantite
-	[], //titanium
-	[], //pine
-	[], //unobtain
-	[], //uni
+	[[64, 3, 5]                      ], //maple
+	[[53, 2, 3], [10, 80], [10, 100] ], //platinum
+	[[68, 4, 5]                      ], //mithril
+	[[79, 3, 5]                      ], //birch
+	[[83, 3, 4], [10, 80], [10, 100] ], //adamantite
+	[[94, 3, 4], [10, 80], [10, 100] ], //titanium
+	[[105, 3, 5]                     ], //pine
+	[[107, 3, 4], [10, 80], [10, 100]], //unobtain
+	[[118, 4, 5]                     ], //crystal
 	[[3 , 1, 1]                      ], //wood wall
 	[[4 , 1, 1]                      ], //wood gate
 	[[2 , 1, 1]                      ], //bench
@@ -176,6 +321,23 @@ var lootTables = [
 	[[52, 1, 1]                      ], //steel chest
 	[[50, 1, 1]                      ], //steel wall
 	[[51, 1, 1]                      ], //steel gate
+	[[128, 1, 1]                     ], //tochr
+	[[62, 1, 1]                      ], //platinum wall
+	[[63, 1, 1]                      ], //platinum gate
+	[[77, 1, 1]                      ], //mihtirl wall
+	[[78, 1, 1]                      ], //mi gate
+	[[92, 1, 1]                      ], //adam wall
+	[[93, 1, 1]                      ], //adam gate
+	[[66, 1, 1]                      ], //map wall
+	[[67, 1, 1]                      ], //map gate
+	[[103, 1, 1]                      ], //titan wall
+	[[104, 1, 1]                      ], //titan gate
+	[[81, 1, 1]                      ], //birch wall
+	[[82, 1, 1]                      ], //birch gate
+	[[116, 1, 1]                      ], //unob wall
+	[[117, 1, 1]                      ], //unob gate
+	[[126, 1, 1]                      ], //crystal wall
+	[[127, 1, 1]                      ], //crystal gate
 ]
 var out = [0,0]
 var toolStrengthReq = [0, 
@@ -184,20 +346,36 @@ var toolStrengthReq = [0,
 8, 8, 9, 0, 0,
 0, 1, 1, 2, 2,
 1, 3, 3, 3, 1,
-4, 4, 4
+4, 4, 4, 0, 5,
+5, 6, 6, 7, 7,
+4, 4, 8, 8, 7,
+7, 9, 9, 10,10
+]
+var bitCheck = [
+	1, 2, 2, 2, 1,
+	2, 2, 1, 2, 2,
+	1, 2, 2, 1, 1,
+	1, 2, 2, 2, 2,
+	2, 2, 2, 2, 1,
+	2, 2, 2, 1, 2,
+	2, 2, 2, 2, 2,
+	1, 1, 2, 2, 1,
+	1, 2, 2, 2, 2,
 ]
 var objectHP =  [0, 
         10  , 25  , 40   , 75  , 250 , 
-	300 , 1000 , 750  , 2500, 6969, 
-	13579, 22222, 314159, 50  , 25  ,
+	300 , 1000 , 2500 , 3000, 6969, 
+	13579, 22222, 50000, 50  , 25  ,
 	75  , 100 , 50  , 200 , 100 , 
 	125 , 250 , 400 , 200 , 50  ,
-	500 , 600 , 300 , 30
+	500 , 600 , 300 , 30  , 1200,
+	600, 2400, 1200, 5000, 2500,
+	300, 150, 10000, 5000, 3600,
+	1800, 20000, 10000, 60000, 30000
 ]
 var player = {
 	pos: [],
 	stats: {
-                climbPower: 0.04,
 		hp: 100,
 		mhp: 100,
 		stamina: 100,
@@ -225,8 +403,7 @@ var player = {
 		tooth: 0,
 		milk3: 0, //soy milk
 		pill: 0,
-		potion: 0,
-		foot: 0,
+		milk4: 0,
 		quiver: 0, 
 		drive: 0,
 		berserk: 0,
@@ -235,7 +412,9 @@ var player = {
 		clover2: 0, //5-leaf
 		ruby: 0,
 		rubyPower: 0, //not a powerup 2
+		ring: 0,
 	},
+	moveCooldown:[0,0,0,0]
 }
 function calculateDamage() {
 	var dmgMult = 1 , crit = 0
@@ -253,11 +432,11 @@ function calculateDamage() {
 }
 function updateStats() {
 	var baseStats = {
-                climbPower: 0.04,
 		hp: player.stats.hp,
 		mhp: 100,
 		stamina: player.stats.stamina,
 		staminaCMult: 1,
+		movementSpeed: 1,
 		defense: 0,
 		attackSpeed: 1,
 		reach: 40,
@@ -273,7 +452,10 @@ function updateStats() {
         b[1] = player.powerups.berserkActive>0?Math.log(player.powerups.berserk):0
 	//ruby
 	b[2] = player.powerups.rubyPower
-	baseStats.defense        += 0 //from armor
+	baseStats.defense        += items[inventory[35][0]].defense
+	baseStats.defense        += items[inventory[35][1]].defense
+	baseStats.defense        += items[inventory[35][2]].defense
+	baseStats.defense        += items[inventory[35][3]].defense
 	baseStats.inventorySlots += player.powerups.box*2
 	baseStats.critDamage     += player.powerups.rock*8+b[1]*2
 	baseStats.attackSpeed    += player.powerups.milk1*0.045+b[1]/2
@@ -281,9 +463,9 @@ function updateStats() {
 	baseStats.reach          += player.powerups.glove*4
 	baseStats.critChance     += player.powerups.clover1*10+b[2]/1000
 	baseStats.staminaCMult   *= 3/(player.powerups.milk3+3)*10000/(b[2]+10000)
+	baseStats.movementSpeed  *= 5/(player.powerups.ring+5)*10000/(b[2]+10000)
         baseStats.mhp            += player.powerups.pill*20+b[2]
-	baseStats.climbPower     += player.powerups.foot*0.02
-	baseStats.regen          += player.powerups.potion*0.1
+	baseStats.regen          += player.powerups.milk4*0.02
         //boosts
 	baseStats.defense *= b[0]+1
 	baseStats.critDamage *= b[0]/1.4+1
@@ -296,81 +478,140 @@ function updateStats() {
 	player.stats = baseStats
 }
 function attack() {
-	var rotation = -Math.atan2(mousePos.x-450,mousePos.y-330)+Math.PI 
+	var rotation = -Math.atan2(mousePos.x-450,mousePos.y-330)+Math.PI
+	var lifesteal = player.powerups.tooth*0.01
+	var xpMult = player.powerups.book*.25+1 
 	var x = -9
 	while (x<=9) {
 		var y = -9
 		while (y<=9) {
-                        if (circleCollision(player.pos[0]+0.5+51/60*Math.sin(rotation), player.pos[1]+0.5-51/60*Math.cos(rotation), player.stats.reach/60, player.pos[0]+0.5+x, player.pos[1]+0.5+y, Math.SQRT1_2)) {
-                                var damage = calculateDamage()
-				var x2 = Math.min(Math.max(player.pos[0]+x,0),map.length-1)
-				var y2 = Math.min(Math.max(player.pos[1]+y,0),map.length-1)
-				if (items[inventory[holding][0]].toolStrength >= toolStrengthReq[objectMap[x2][y2][0]]) {
+                        if (circleCollision(0.5+51/60*Math.sin(rotation),0.5-51/60*Math.cos(rotation), player.stats.reach/60, 0.5+x, 0.5+y, Math.SQRT1_2)) {                           
+				var x2 = player.pos[0]+x
+			
+				var y2 = player.pos[1]+y
+				if (map[x2]==undefined||map[0][y2]==undefined)continue
+				var damage = calculateDamage()
+				damage[0] *= items[inventory[holding][0]].damageMult>>>bitCheck[map[x2][y2][0]-1]&1
+				if (items[inventory[holding][0]].toolStrength >= toolStrengthReq[objectMap[x2][y2][0]]&&objectMap[x2][y2][0]) {
                                         damage[0] = Math.round(damage[0]*1.1**(items[inventory[holding][0]].toolStrength-toolStrengthReq[objectMap[x2][y2][0]]))                                
 					objectMap[x2][y2][1] -= damage[0]
 				} else {
 					damage[0] = 0
 				}
-				var rot = Math.atan2(x,y)
-				player.exp += damage[0]           
+				screenShakeAmp = 10
+				player.stats.hp = Math.min(player.stats.mhp,player.stats.hp+damage[0]*lifesteal)
+                                player.exp += damage[0]*xpMult
+				objectMap[x2][y2][4] = 4
+				var rot = Math.atan2(x,y)+Math.PI
+				if (damage[1]&&Math.random()<0.05*player.powerups.berserk) player.berserkActive = 20*player.powerups.berserk     
 				switch (objectMap[x2][y2][0]) {
 					case 1: 
-					        createParticles(0.45+x2,0.45+y2,0.55+x2,0.55+y2,[1,2],[0.005,10],rot-0.7,rot+0.7,0.1,0.141,[92,66,8,255],"rgb",0.1,0.13,4,8,23,26,0.86,0.89)
-						createParticles(0.45+x2,0.45+y2,0.55+x2,0.55+y2,[1,2],[0.005,10],-0.4,0.4,0.1,0.141,[92,66,8,255],"rgb",0.1,0.13,2,3,23,26,0.86,0.89)
+					        createParticles(0.45+x2,0.45+y2,0.55+x2,0.55+y2,[1,2],[0.005,10],rot-0.7,rot+0.7,0.1,0.141,[92,66,8,255],"rgb",0.1,0.13,6,11,23,26,0.86,0.89)
 						createParticles(x2,0.1+y2,1+x2,0.45+y2,[1,2],[0.005,2],-1,1,0.03,0.05,[106,190,48,255],"rgb",0.1,0.13,6,8,100,140,0.94,0.96)
 					break;//tree
 					case 2: //rocc
 					case 17: //stone wall
 					case 18: //stone gate
 					case 21: //furnace
-						createParticles(0.45+x2,0.45+y2,0.55+x2,0.55+y2,[1,2],[0.005,10],rot-0.7,rot+0.7,0.1,0.141,[100,100,108,255],"rgb",0.1,0.13,4,8,23,26,0.86,0.89)
-						createParticles(0.45+x2,0.45+y2,0.55+x2,0.55+y2,[1,2],[0.005,10],-0.4,0.4,0.1,0.141,[100,100,108,255],"rgb",0.1,0.13,2,3,23,26,0.86,0.89)
+						createParticles(0.45+x2,0.45+y2,0.55+x2,0.55+y2,[1,2],[0.005,10],rot-0.7,rot+0.7,0.1,0.141,[100,100,108,255],"rgb",0.1,0.13,6,11,23,26,0.86,0.89)
 					break;
 					case 3:
-						createParticles(0.45+x2,0.45+y2,0.55+x2,0.55+y2,[1,2],[0.005,10],rot-0.7,rot+0.7,0.1,0.141,[100,100,108,255],"rgb",0.1,0.13,3,5,23,26,0.86,0.89)
-						createParticles(0.45+x2,0.45+y2,0.55+x2,0.55+y2,[1,2],[0.005,10],-0.4,0.4,0.1,0.141,[100,100,108,255],"rgb",0.1,0.13,1,2,23,26,0.86,0.89)
-						createParticles(0.45+x2,0.45+y2,0.55+x2,0.55+y2,[1,2],[0.005,10],rot-0.7,rot+0.7,0.1,0.141,[185,122,87,255],"rgb",0.1,0.13,1,3,23,26,0.86,0.89)
-						createParticles(0.45+x2,0.45+y2,0.55+x2,0.55+y2,[1,2],[0.005,10],-0.4,0.4,0.1,0.141,[185,122,87,255],"rgb",0.1,0.13,1,1,23,26,0.86,0.89)
+						createParticles(0.45+x2,0.45+y2,0.55+x2,0.55+y2,[1,2],[0.005,10],rot-0.7,rot+0.7,0.1,0.141,[100,100,108,255],"rgb",0.1,0.13,4,6,23,26,0.86,0.89)
+						createParticles(0.45+x2,0.45+y2,0.55+x2,0.55+y2,[1,2],[0.005,10],rot-0.7,rot+0.7,0.1,0.141,[185,122,87,255],"rgb",0.1,0.13,2,4,23,26,0.86,0.89)
 					break;//copper ore
 					case 4:
-						createParticles(0.45+x2,0.45+y2,0.55+x2,0.55+y2,[1,2],[0.005,10],rot-0.7,rot+0.7,0.1,0.141,[100,100,108,255],"rgb",0.1,0.13,3,5,23,26,0.86,0.89)
-						createParticles(0.45+x2,0.45+y2,0.55+x2,0.55+y2,[1,2],[0.005,10],-0.4,0.4,0.1,0.141,[100,100,108,255],"rgb",0.1,0.13,1,2,23,26,0.86,0.89)
-						createParticles(0.45+x2,0.45+y2,0.55+x2,0.55+y2,[1,2],[0.005,10],rot-0.7,rot+0.7,0.1,0.141,[160,129,112,255],"rgb",0.1,0.13,1,3,23,26,0.86,0.89)
-						createParticles(0.45+x2,0.45+y2,0.55+x2,0.55+y2,[1,2],[0.005,10],-0.4,0.4,0.1,0.141,[160,129,112,255],"rgb",0.1,0.13,1,1,23,26,0.86,0.89)
+						createParticles(0.45+x2,0.45+y2,0.55+x2,0.55+y2,[1,2],[0.005,10],rot-0.7,rot+0.7,0.1,0.141,[100,100,108,255],"rgb",0.1,0.13,4,6,23,26,0.86,0.89)
+						createParticles(0.45+x2,0.45+y2,0.55+x2,0.55+y2,[1,2],[0.005,10],rot-0.7,rot+0.7,0.1,0.141,[160,129,112,255],"rgb",0.1,0.13,2,4,23,26,0.86,0.89)
 					break;//iron ore
+					case 5: 
+					        createParticles(0.45+x2,0.45+y2,0.55+x2,0.55+y2,[1,2],[0.005,10],rot-0.7,rot+0.7,0.1,0.141,[150,151,130,255],"rgb",0.1,0.13,6,11,23,26,0.86,0.89)
+						createParticles(x2,0.1+y2,1+x2,0.45+y2,[1,2],[0.005,2],-1,1,0.03,0.05,[206,60,67,255],"rgb",0.1,0.13,6,8,100,140,0.94,0.96)
+					break;//maple tree
+					case 6:
+						createParticles(0.45+x2,0.45+y2,0.55+x2,0.55+y2,[1,2],[0.005,10],rot-0.7,rot+0.7,0.1,0.141,[100,100,108,255],"rgb",0.1,0.13,4,6,23,26,0.86,0.89)
+						createParticles(0.45+x2,0.45+y2,0.55+x2,0.55+y2,[1,2],[0.005,10],rot-0.7,rot+0.7,0.1,0.141,[153,217,234,255],"rgb",0.1,0.13,2,4,23,26,0.86,0.89)
+					break;//platinum ore
+					case 7: //mithirkl
+					case 32: //wall
+					case 33: //gate
+					        createParticles(0.45+x2,0.45+y2,0.55+x2,0.55+y2,[1,2],[0.005,10],rot-0.7,rot+0.7,0.1,0.141,[121,154,187,255],"rgb",0.1,0.13,6,11,23,26,0.86,0.89)
+						createParticles(0.45+x2,0.45+y2,0.55+x2,0.55+y2,[1,2],[0.005,10],-0.4,0.4,0.1,0.141,[121,154,187,255],"rgb",0.1,0.13,2,3,23,26,0.86,0.89)
+					break;
+					case 8: 
+					        createParticles(0.45+x2,0.45+y2,0.55+x2,0.55+y2,[1,2],[0.005,10],rot-0.7,rot+0.7,0.1,0.141,[214,214,214,255],"rgb",0.1,0.13,6,11,23,26,0.86,0.89)
+						createParticles(x2,0.1+y2,1+x2,0.45+y2,[1,2],[0.005,2],-1,1,0.03,0.05,[219,213,100,255],"rgb",0.1,0.13,6,8,100,140,0.94,0.96)
+					break;//bich tree
+					case 9:
+						createParticles(0.45+x2,0.45+y2,0.55+x2,0.55+y2,[1,2],[0.005,10],rot-0.7,rot+0.7,0.1,0.141,[100,100,108,255],"rgb",0.1,0.13,4,6,23,26,0.86,0.89)
+						createParticles(0.45+x2,0.45+y2,0.55+x2,0.55+y2,[1,2],[0.005,10],rot-0.7,rot+0.7,0.1,0.141,[121,187,138,255],"rgb",0.1,0.13,2,4,23,26,0.86,0.89)
+					break;//adam ore
+					case 10:
+						createParticles(0.45+x2,0.45+y2,0.55+x2,0.55+y2,[1,2],[0.005,10],rot-0.7,rot+0.7,0.1,0.141,[100,100,108,255],"rgb",0.1,0.13,4,6,23,26,0.86,0.89)
+						createParticles(0.45+x2,0.45+y2,0.55+x2,0.55+y2,[1,2],[0.005,10],rot-0.7,rot+0.7,0.1,0.141,[224,224,224,255],"rgb",0.1,0.13,2,4,23,26,0.86,0.89)
+					break;//titan ore
+					case 11: 
+					        createParticles(0.45+x2,0.45+y2,0.55+x2,0.55+y2,[1,2],[0.005,10],rot-0.7,rot+0.7,0.1,0.141,[61,40,31,255],"rgb",0.1,0.13,6,11,23,26,0.86,0.89)
+						createParticles(x2,0.1+y2,1+x2,0.45+y2,[1,2],[0.005,2],-1,1,0.03,0.05,[34,117,76,255],"rgb",0.1,0.13,6,8,100,140,0.94,0.96)
+					break;//pi tree
+					case 12:
+					case 42:
+					case 43: 
+					        createParticles(0.45+x2,0.45+y2,0.55+x2,0.55+y2,[1,2],[0.005,10],rot-0.7,rot+0.7,0.1,0.141,[14,71,31,255],"rgb",0.1,0.13,6,11,23,26,0.86,0.89)
+					break;//unob
+					case 13: //crystal 
+					case 44: //crystal wall
+					case 45: //crystal gate
+					        createParticles(0.45+x2,0.45+y2,0.55+x2,0.55+y2,[1,2],[0.005,10],rot-0.7,rot+0.7,0.1,0.141,[92,117,195,255],"rgb",0.1,0.13,6,11,23,26,0.86,0.89)
+						createParticles(0.45+x2,0.45+y2,0.55+x2,0.55+y2,[1,2],[0.005,10],rot-0.7,rot+0.7,0.1,0.141,[91,91,196,255],"rgb",0.1,0.13,6,11,23,26,0.86,0.89)
+						createParticles(0.45+x2,0.45+y2,0.55+x2,0.55+y2,[1,2],[0.005,10],rot-0.7,rot+0.7,0.1,0.141,[118,91,196,255],"rgb",0.1,0.13,6,11,23,26,0.86,0.89)
+						createParticles(0.45+x2,0.45+y2,0.55+x2,0.55+y2,[1,2],[0.005,10],rot-0.7,rot+0.7,0.1,0.141,[143,91,196,255],"rgb",0.1,0.13,6,11,23,26,0.86,0.89)
+						createParticles(0.45+x2,0.45+y2,0.55+x2,0.55+y2,[1,2],[0.005,10],rot-0.7,rot+0.7,0.1,0.141,[170,91,196,255],"rgb",0.1,0.13,6,11,23,26,0.86,0.89)
 					case 14: //wood wall
 					case 15: //wood gate
 					case 16: //workbench
-						createParticles(0.45+x2,0.45+y2,0.55+x2,0.55+y2,[1,2],[0.005,10],rot-0.7,rot+0.7,0.1,0.141,[92,66,8,255],"rgb",0.1,0.13,4,8,23,26,0.86,0.89)
-						createParticles(0.45+x2,0.45+y2,0.55+x2,0.55+y2,[1,2],[0.005,10],-0.4,0.4,0.1,0.141,[92,66,8,255],"rgb",0.1,0.13,2,3,23,26,0.86,0.89)
+					case 29: //torch
+						createParticles(0.45+x2,0.45+y2,0.55+x2,0.55+y2,[1,2],[0.005,10],rot-0.7,rot+0.7,0.1,0.141,[92,66,8,255],"rgb",0.1,0.13,6,11,23,26,0.86,0.89)
 					break;
 					case 19: //copper wall
 					case 20: //copper gate
-						createParticles(0.45+x2,0.45+y2,0.55+x2,0.55+y2,[1,2],[0.005,10],rot-0.7,rot+0.7,0.1,0.141,[185,122,87,255],"rgb",0.1,0.13,4,8,23,26,0.86,0.89)
-						createParticles(0.45+x2,0.45+y2,0.55+x2,0.55+y2,[1,2],[0.005,10],-0.4,0.4,0.1,0.141,[185,122,87,255],"rgb",0.1,0.13,2,3,23,26,0.86,0.89)
+						createParticles(0.45+x2,0.45+y2,0.55+x2,0.55+y2,[1,2],[0.005,10],rot-0.7,rot+0.7,0.1,0.141,[185,122,87,255],"rgb",0.1,0.13,6,11,23,26,0.86,0.89)
 					break;
 					case 22: //anvil
 					case 23: //iron wall
 					case 24: //iron gate
-						createParticles(0.45+x2,0.45+y2,0.55+x2,0.55+y2,[1,2],[0.005,10],rot-0.7,rot+0.7,0.1,0.141,[146,136,133,255],"rgb",0.1,0.13,4,8,23,26,0.86,0.89)
-						createParticles(0.45+x2,0.45+y2,0.55+x2,0.55+y2,[1,2],[0.005,10],-0.4,0.4,0.1,0.141,[146,136,133,255],"rgb",0.1,0.13,2,3,23,26,0.86,0.89)
+						createParticles(0.45+x2,0.45+y2,0.55+x2,0.55+y2,[1,2],[0.005,10],rot-0.7,rot+0.7,0.1,0.141,[146,136,133,255],"rgb",0.1,0.13,6,11,23,26,0.86,0.89)
 					break;
 					case 25: //wood chest
-                                                createParticles(0.45+x2,0.45+y2,0.55+x2,0.55+y2,[1,2],[0.005,10],rot-0.7,rot+0.7,0.1,0.141,[92,66,8,255],"rgb",0.1,0.13,4,8,23,26,0.86,0.89)
-						createParticles(0.45+x2,0.45+y2,0.55+x2,0.55+y2,[1,2],[0.005,10],-0.4,0.4,0.1,0.141,[92,66,8,255],"rgb",0.1,0.13,2,3,23,26,0.86,0.89)
-						createParticles(0.45+x2,0.45+y2,0.55+x2,0.55+y2,[1,2],[0.005,10],rot-0.7,rot+0.7,0.1,0.141,[100,100,108,255],"rgb",0.1,0.13,4,8,23,26,0.86,0.89)
-						createParticles(0.45+x2,0.45+y2,0.55+x2,0.55+y2,[1,2],[0.005,10],-0.4,0.4,0.1,0.141,[100,100,108,255],"rgb",0.1,0.13,2,3,23,26,0.86,0.89)
+                                                createParticles(0.45+x2,0.45+y2,0.55+x2,0.55+y2,[1,2],[0.005,10],rot-0.7,rot+0.7,0.1,0.141,[92,66,8,255],"rgb",0.1,0.13,6,11,23,26,0.86,0.89)
+						createParticles(0.45+x2,0.45+y2,0.55+x2,0.55+y2,[1,2],[0.005,10],rot-0.7,rot+0.7,0.1,0.141,[100,100,108,255],"rgb",0.1,0.13,6,11,23,26,0.86,0.89)
 					break;
 					case 26: //steel chest
-					        createParticles(0.45+x2,0.45+y2,0.55+x2,0.55+y2,[1,2],[0.005,10],rot-0.7,rot+0.7,0.1,0.141,[146,136,133,255],"rgb",0.1,0.13,4,8,23,26,0.86,0.89)
-						createParticles(0.45+x2,0.45+y2,0.55+x2,0.55+y2,[1,2],[0.005,10],-0.4,0.4,0.1,0.141,[146,136,133,255],"rgb",0.1,0.13,2,3,23,26,0.86,0.89)
-						createParticles(0.45+x2,0.45+y2,0.55+x2,0.55+y2,[1,2],[0.005,10],rot-0.7,rot+0.7,0.1,0.141,[213,207,206,255],"rgb",0.1,0.13,4,8,23,26,0.86,0.89)
-						createParticles(0.45+x2,0.45+y2,0.55+x2,0.55+y2,[1,2],[0.005,10],-0.4,0.4,0.1,0.141,[213,207,206,255],"rgb",0.1,0.13,2,3,23,26,0.86,0.89)
+					        createParticles(0.45+x2,0.45+y2,0.55+x2,0.55+y2,[1,2],[0.005,10],rot-0.7,rot+0.7,0.1,0.141,[146,136,133,255],"rgb",0.1,0.13,6,11,23,26,0.86,0.89)
+						createParticles(0.45+x2,0.45+y2,0.55+x2,0.55+y2,[1,2],[0.005,10],rot-0.7,rot+0.7,0.1,0.141,[213,207,206,255],"rgb",0.1,0.13,6,11,23,26,0.86,0.89)
 					break;
 					case 27: //steel wall
 					case 28: //steel gate
-					        createParticles(0.45+x2,0.45+y2,0.55+x2,0.55+y2,[1,2],[0.005,10],rot-0.7,rot+0.7,0.1,0.141,[213,207,206,255],"rgb",0.1,0.13,4,8,23,26,0.86,0.89)
-						createParticles(0.45+x2,0.45+y2,0.55+x2,0.55+y2,[1,2],[0.005,10],-0.4,0.4,0.1,0.141,[213,207,206,255],"rgb",0.1,0.13,2,3,23,26,0.86,0.89)
+					        createParticles(0.45+x2,0.45+y2,0.55+x2,0.55+y2,[1,2],[0.005,10],rot-0.7,rot+0.7,0.1,0.141,[213,207,206,255],"rgb",0.1,0.13,6,11,23,26,0.86,0.89)
+					break;
+					case 30: // platinum buildings
+					case 31:
+						createParticles(0.45+x2,0.45+y2,0.55+x2,0.55+y2,[1,2],[0.005,10],rot-0.7,rot+0.7,0.1,0.141,[153,217,234,255],"rgb",0.1,0.13,6,11,23,26,0.86,0.89)
+					break;
+					case 34: //adam buildings
+					case 35:
+						createParticles(0.45+x2,0.45+y2,0.55+x2,0.55+y2,[1,2],[0.005,10],rot-0.7,rot+0.7,0.1,0.141,[121,187,138,255],"rgb",0.1,0.13,6,11,23,26,0.86,0.89)
+					break;
+					case 36://maple buildings
+					case 37: 
+					        createParticles(0.45+x2,0.45+y2,0.55+x2,0.55+y2,[1,2],[0.005,10],rot-0.7,rot+0.7,0.1,0.141,[150,151,130,255],"rgb",0.1,0.13,6,11,23,26,0.86,0.89)
+					break;
+					case 38://titn buildings
+					case 39: 
+					        createParticles(0.45+x2,0.45+y2,0.55+x2,0.55+y2,[1,2],[0.005,10],rot-0.7,rot+0.7,0.1,0.141,[224,224,224,255],"rgb",0.1,0.13,6,11,23,26,0.86,0.89)
+					break;
+					case 40: //bich buildings
+					case 41: 
+					        createParticles(0.45+x2,0.45+y2,0.55+x2,0.55+y2,[1,2],[0.005,10],rot-0.7,rot+0.7,0.1,0.141,[214,214,214,255],"rgb",0.1,0.13,6,11,23,26,0.86,0.89)
 					break;
 				}
 				if (objectMap[x2][y2][0] > 0) {
@@ -423,7 +664,9 @@ function attack() {
 			createParticles(0.45+enemies[x].x,0.45+enemies[x].y,0.55+enemies[x].x,0.55+enemies[x].y,[1,2],[0.005,10],-0.7+particleRad,0.7+particleRad,0.06,0.1,[255,0,0,255],"rgb",0.1,0.13,3,5,40,50,0.97,0.98)
 			createParticles(0.45+enemies[x].x,0.45+enemies[x].y,0.55+enemies[x].x,0.55+enemies[x].y,[1,2],[0.005,10],-0.7+particleRad,0.7+particleRad,0.06,0.1,[200,0,0,255],"rgb",0.1,0.13,3,5,40,50,0.97,0.98)
 		        var damage = calculateDamage()
-			player.exp += 5*damage[0]*((items[inventory[holding][0]].damageMult/(1<<0))%2<<0)
+			damage[0] *= items[inventory[holding][0]].damageMult>>>0&1
+			player.stats.hp = Math.min(player.stats.mhp,player.stats.hp+damage[0]*lifesteal*2)
+			player.exp += 5*damage[0]*xpMult
 			switch (damage[1]) {
 				case 0:
                                         texts.push({
@@ -459,13 +702,22 @@ function attack() {
 				        })
 				break;
 			}		        
-		        enemies[x].hp -= damage[0]*((items[inventory[holding][0]].damageMult/(1<<0))%2<<0)
+		        enemies[x].hp -= damage[0]
 		}
 	}
 }
 function update() {
-	if (times>maxTimes&&player.stats.hp>0) {
+	if(times<=maxTimes)return
+	if (player.stats.hp>0) {
+		player.berserkActive--
+		player.moveCooldown = player.moveCooldown.map(a => a+1)
 		var x=-40,c
+		var speed = 10*player.stats.movementSpeed
+		speed *= (keyPressed["shift"]&&player.stats.stamina>=0.25/player.stats.staminaCMult)?.6:1
+		if(player.moveCooldown[0]>=speed&&keyPressed["w"]){move([0,-1]);player.moveCooldown[0]%=speed}
+		if(player.moveCooldown[1]>=speed&&keyPressed["a"]){move([-1,0]);player.moveCooldown[1]%=speed}
+		if(player.moveCooldown[2]>=speed&&keyPressed["s"]){move([0, 1]);player.moveCooldown[2]%=speed}
+		if(player.moveCooldown[3]>=speed&&keyPressed["d"]){move([1, 0]);player.moveCooldown[3]%=speed}
 	        while (x <= 40) {
 		        var y = -40
 		        while (y <= 40) {
@@ -502,20 +754,22 @@ function update() {
 		updateTime()
 		updateInventory()
 		updateClick()
-		for (x in enemies) {
-			enemies[x].tick()
-		}
 		if (click[0]) pickup("inventory")
-                player.stats.stamina=Math.min(player.stats.stamina+0.25,100)
+                if (keyPressed["shift"]) {
+			player.stats.stamina=Math.max(player.stats.stamina-0.25*player.stats.staminaCMult,0)
+		} else {
+			player.stats.stamina=Math.min(player.stats.stamina+0.25,100)
+		}
 		player.attackCooldown < 100 ? player.attackCooldown+=player.stats.attackSpeed*items[inventory[holding][0]].atkSpeed : 0
 		//console.log((!!mouseDown[0])&&(player.attackCooldown>=100)&&aa)
-		if ((!!mouseDown[0])&&(player.attackCooldown>=100)&&screen=="") {
+		if (mouseDown[0]&&player.attackCooldown>=100&&screen=="") {
 			player.attackCooldown %= 100
 			attackDuration = 5	
 			attack()
 		}
+		levelUp()
 	        render()   
-	} else if (times>maxTimes) {
+	} else {
 		alert("yuo ded \n reload for new world")
 	}
 }
@@ -537,7 +791,15 @@ function spawnObject() {
 	a<100 ? objectMap[spwn[0]][spwn[1]] = [toSpawn,hp,hp,{}] : 0
 }
 function render() {
+	ctx.clearRect(-900,-600,1800,1200)
+	var screenRad = Math.random()*Math.PI*2
+	screenShakeAmp *= 0.5
+	screenShake[0] = Math.round(Math.sin(screenRad)*screenShakeAmp)
+	screenShake[1] = Math.round(Math.cos(screenRad)*screenShakeAmp)
+	ctx.translate(screenShake[0],screenShake[1])
+	renderHeight()
 	renderObjects()
+	renderEnemies()
 	build()
 	for (p in drops) {
 		ctx.drawImage(sprite.items,drops[p].id%5*60, Math.floor(drops[p].id/5)*60, 60, 60, (drops[p].x-player.pos[0]+20/3)*60, (drops[p].y-player.pos[1]+14/3)*60, 40, 40)
@@ -551,6 +813,7 @@ function render() {
 			"uncommon": [0, 127, 0, 100],
 			"rare": [0, 0, 166, 100],
 			"epic": [157, 30, 157, 100],
+			"legendary":[255,220,0, 100],
 			"mythical": [145, 0, 0, 100],
 		}
 		if (Math.random()<0.01*2**rarities.indexOf(items[drops[p].id].rarity)) {
@@ -620,49 +883,53 @@ function render() {
 	//ctx.stroke()
 	//ctx.closePath()
 	ctx.setTransform(1,0,0,1,0,0)
+	ctx.translate(screenShake[0],screenShake[1])
 	//ctx.beginPath()
 	//ctx.arc(450+51*Math.sin(-Math.atan2(mousePos.x-450,mousePos.y-330)+Math.PI),330-51*Math.cos(-Math.atan2(mousePos.x-450,mousePos.y-330)+Math.PI),player.stats.reach,0,7)
 	//ctx.stroke()
 	//ctx.closePath()
 	//filter off things
-	drops = drops.filter(a => a.x>-1)
+	drops = drops.filter(a => a.x>-1&&a.amount>0)
 	particles = particles.filter(a=>a.life>0)
 	texts = texts.filter(a=>a.color[3]>0)
-	ctx.fillStyle = "hsla(0,0%,0%,"+(1-(Math.cos(hr*Math.PI/12+Math.PI)+1.1)/2.1)+")"
-	ctx.fillRect(-900,-600,1800,1200)
-	ctx.fillStyle = "white";ctx.font = "21px Roboto";ctx.textAlign = "center"
-	ctx.fillText(player.pos[0]+", "+player.pos[1],40,40)
-	var a = Math.floor((hr%1*60)).toString().length<2?"0"+Math.floor(hr%1*60):Math.floor(hr%1*60)
-	ctx.fillText(Math.floor(hr)+":"+a,120,40) 
+	renderBrightness()
+	ctx.setTransform(1,0,0,1,0,0)
 	renderBars()
+	renderGUI()
+	renderPowerups()
 	renderScreen()
 	ctx.font = "19px Roboto"
 	ctx.textAlign = "center"
 	renderInventory()
 	renderCursor()
 }
-function aaa() {
+function renderMinimap() {
 	var a=0
 	var ctx3 = document.getElementById("canvas3").getContext("2d")
 	while (a<map.length) {
 		var b=0
 		while (b<map.length) {
 			var h = map[a][b]
-			if (h< .1)ctx3.fillStyle="hsl(192, 100%, 15%)"
-	                else if (h< .2)ctx3.fillStyle="hsl(192, 100%, 30%)"
-	                else if (h< .3)ctx3.fillStyle="hsl(192, 100%, 50%)"
-	                else if (h< .4)ctx3.fillStyle="hsl(62 , 100%, 45%)"
-	                else if (h<.62)ctx3.fillStyle="hsl(120, 100%, 30%)"
-	                else if (h<.71)ctx3.fillStyle="hsl(120 ,100%, 15%)"
-	                else if (h<.75)ctx3.fillStyle="hsl(30 ,   0%, 40%)"
-	                else ctx3.fillStyle="hsl(0  ,   0%, 90%)" 
+			        if      (h< .1 )ctx3.fillStyle="#003d4d"
+	                        else if (h< .2 )ctx3.fillStyle="#007a99"
+	                        else if (h< .3 )ctx3.fillStyle="#00ccff"
+	                        else if (h< .4 )ctx3.fillStyle="#dee600"
+	                        else if (h<.62 )ctx3.fillStyle="#009900"
+	                        else if (h<.71 )ctx3.fillStyle="#004d00"
+	                        else if (h<.75 )ctx3.fillStyle="#666666"
+	                        else            ctx3.fillStyle="#e6e6e6"
 	               // var pxl = document.getElementById("canvas2").getContext("2d").getImageData(Math.trunc(map[a][b]*1000),0,1,1).data
 	                //ctx3.fillStyle = "rgb("+pxl[0]+","+pxl[1]+","+pxl[2]+")"
-			ctx3.fillRect(b,a,1,1)
+			ctx3.fillRect(b/2,a/2,1,1)
 			b+=2
 		}
 		a+=2
 	}
+	ctx3.fillStyle = "#f00"
+	ctx3.beginPath()
+	ctx3.arc(Math.floor(player.pos[0]/2),Math.floor(player.pos[1]/2),4,0,7)
+	ctx3.fill()
+	ctx3.closePath()
 }
 //semi-stationary functions/variables
 var rarity_colors = {
@@ -670,6 +937,7 @@ var rarity_colors = {
 	"uncommon": "rgba(0, 127, 0, 0.6)",
 	"rare": "rgba(0, 0, 166, 0.6)",
 	"epic": "rgba(157, 30, 157, 0.6)",
+	"legendary": "rgba(255,220,0,0.6)",
 	"mythical": "rgba(190, 0, 0, 0.6)",
 }
 var mouseDown = [0, 0, 0, 0, 0, 0, 0, 0, 0],mouseDownCount = 0;
@@ -681,6 +949,7 @@ var avg = 5 //how many times times to avg-ing (5 meaning set to avg every 5 upda
 var max=0,min=0,heatMax=0,heatMin=0 //kinda useless (dont delete)
 var width = 200,height = 200 //width and height of map
 var day = 0
+var brightnessMap
 var hr = 6
 var diff = 1
 var sprite = {
@@ -689,6 +958,8 @@ var sprite = {
 	rick: new Image(), 
 	items: new Image(),
 	enemies: new Image(),
+	gui: new Image(),
+	powerups: new Image(),
 }
 ctx.textAlign = "center"
 ctx.textBaseline = "middle"
@@ -697,10 +968,12 @@ sprite.object.src = "object.png"
 sprite.rick.src = "rick.png"
 sprite.items.src = "items.png"
 sprite.enemies.src = "enemies.png"
+sprite.gui.src = "ui.png"
+sprite.powerups.src = "powerups.png"
 function spawnItems(lootTable, times, x, y) {
 	var loots = [],a,c=0
 	//loottable format: [id n, chance n] or [id n, min n, max n]
-	while (c < times) {
+	while (c++ < times) {
 	        for (a in lootTable) {
 		        switch (lootTable[a].length) {
 			        case 2:
@@ -713,11 +986,10 @@ function spawnItems(lootTable, times, x, y) {
 		        	break;
 	        	}
         	}
-		c++
         }
 	for (a in loots) {
 		var b = 0
-		while (b < loots[a][1]) {
+		while (b++ < loots[a][1]) {
 			var rad = Math.random()*Math.PI*2
 			var speed = Math.random()*0.1
 			drops.push({
@@ -730,18 +1002,13 @@ function spawnItems(lootTable, times, x, y) {
 				amount: 1,
 				life: 7, 
 			})
-			b++
 		}
 	}
 }
-function move(e) {
+function press(e) {
 	var key = e.which || e.keyCode
 	var dir = [0,0]
 	switch (key) {
-                case 87 : case 119: dir[1]--;break; //w
-		case 65 : case 97 : dir[0]--;break; //a
-		case 83 : case 115: dir[1]++;break; //s
-		case 68 : case 100: dir[0]++;break; //d
 		case 49 :             holding = 0; player.attackCooldown = 0;break; //1
 		case 50 :             holding = 1; player.attackCooldown = 0;break;
 		case 51 :             holding = 2; player.attackCooldown = 0;break;
@@ -758,14 +1025,13 @@ function move(e) {
 			screen="crafting";screenBonus[0]=0;screenBonus[1]=1
 		} //r
 		break;
+		case 77: case 109: renderMinimap() ;break;
 		//case 45: screenBonus[2]=Math.max(0,screenBonus[2]-1);break;//-
 		//case 61: screenBonus[2]++;break;//+
 		//case 37: screenBonus[1]--;break;//left arrow
 		//case 39: screenBonus[1]++;break; //right arrow
 		case 27: screen="";screenBonus[0]=0;screenBonus[1]=0;break;
 	}
-	var x2 = player.pos[0]+dir[0]
-	var y2 = player.pos[1]+dir[1]
 	/*if (JSON.stringify(dir)!="[0,0]"&&player.stats.stamina>=5&&==0) {
                 if ( Math.random() < 1 - 
 	        Math.min(Math.abs( map[player.pos[0]][player.pos[1]] - map[player.pos[0]+dir[0]][player.pos[1]+dir[1]] ) 
@@ -776,40 +1042,49 @@ function move(e) {
 	        }
 		player.stats.stamina-=5
 	} //very fun to read i know */
-	if (JSON.stringify(dir)!="[0,0]") {
+}
+function move(dir) {
+	var x2 = player.pos[0]+dir[0]
+	var y2 = player.pos[1]+dir[1]
+	if(map[x2]==undefined||map[0][y2]==undefined)return
+        if (JSON.stringify(dir)!="[0,0]") {
 		switch (objectMap[x2][y2][0]) {
 			case 0:
 			case 15:
 			case 18:
 			case 20:
-				if (player.stats.stamina>=5) {
-				        if (Math.random()<1-Math.min(Math.abs(map[player.pos[0]][player.pos[1]]-map[x2][y2])-player.stats.climbPower, player.stats.climbPower*2)/player.stats.climbPower-Math.max(0.3-map[x2][y2],0)*1.3) {
-		                                player.pos[0] += dir[0]
-		                                player.pos[1] += dir[1]
-	                                }
-		                        player.stats.stamina-=5*player.stats.staminaCMult
-			        }
+			case 24:
+			case 28:
+			case 29:
+			case 31:
+			case 33:
+			case 35:
+			case 37:
+			case 39:
+			case 41:
+			case 43:
+			case 45:
+		                player.pos[0] += dir[0]
+		                player.pos[1] += dir[1]
 			break;
 			case 16:
-				screen = "crafting"
-				screenBonus[0] = 16
-			break;
 			case 21:
+			case 22:
 				screen = "crafting"
-				screenBonus[0] = 21
+				screenBonus[0] = objectMap[x2][y2][0]
 			break;
 			case 25: //chest
+			case 26:
 			        screen = "storage"
 				screenBonus[0] = x2
 				screenBonus[1] = y2
 			break;
 		}
 	}
-	render()
 }
 function createParticles(minX, minY, maxX, maxY, type, amp, minRad, maxRad, minSpeed, maxSpeed, color, colorType, radiusMin, radiusMax, minAmount, maxAmount, minLife, maxLife, frictionMin, frictionMax) {
 	var i = Math.round(randomRange(minAmount, maxAmount))
-	while (i>0) {
+	while (i-->0) {
 		var rad = randomRange(minRad,maxRad)
 		var speed = randomRange(minSpeed,maxSpeed)
 	        particles.push(JSON.parse(JSON.stringify({
@@ -825,7 +1100,6 @@ function createParticles(minX, minY, maxX, maxY, type, amp, minRad, maxRad, minS
 			colorType: colorType,
 			friction: randomRange(frictionMin, frictionMax),
 	        })))
-		i--
         }
 }
 function craftItems(recipe, amnt) {
@@ -865,10 +1139,10 @@ function pickup(type) {
 			                touched = Math.floor(mousePos.x/70)
 		                }
 	                }
-		        if (mousePos.y>=95&&mousePos.x>=65&&(mousePos.y%70<15||mousePos.y%70>24)&&(mousePos.x+5)%70<60&&mousePos.x<=644&&mousePos.y<=444&&screen=="inventory") {
+		        if (mousePos.y>=95&&mousePos.x>=65&&(mousePos.y%70<15||mousePos.y%70>24)&&(mousePos.x+5)%70<60&&mousePos.x<=575&&mousePos.y<=444&&screen=="inventory") {
                                 touched = Math.floor((mousePos.x-65)/70)+(4-Math.floor((mousePos.y-95)/70))*7
 	                }
-	                if((touched==-2||touched>=player.stats.inventorySlots)&&screen=="inventory") {
+	                if((touched==-2||touched>=player.stats.inventorySlots)||(mousePos.y<95||mousePos.x<65||mousePos.x>575||mousePos.y>444)) {
                                 var rad = Math.atan2(mousePos.x-450,mousePos.y-330)
 			        var speed = 0.18
 			        if(out[0]){drops.push({
@@ -882,7 +1156,7 @@ function pickup(type) {
 				        life: 19, 
 			        })}
 				out = [0,0]
-			} else if (touched!==-2) {
+			} else if (touched!==-2&&touched<player.stats.inventorySlots) {
                                 var tempOut = inventory[touched].slice()
 	                        inventory[touched] = out.slice()
 	                        out = tempOut.slice() 
@@ -913,10 +1187,10 @@ function pickup(type) {
 function updateTime() {
         hr += 0.002
 	hr = hr.toFixed(4)
-	hr %= 24
 	if(!(hr*1000%500)&&hr<6)spawnEnemies()
+	hr %= 24
 	if (hr==0) day++
-	diff = day+0.5
+	diff = (1.05+.05*diffMult)**day
 }
 function updateInventory() {
 	amounts=Array(items.length).fill(0),IndxOnInv=Array(items.length).fill(-1)
@@ -928,8 +1202,9 @@ function updateInventory() {
 		        unlocked[inventory[c][0]] = true
 		} 
 	}
-        inventory = Array(45).fill([0,0]).map(copy)
-	inventory.push([0,0,0,0])
+	var tempArmor = inventory[35]
+        inventory = Array(35).fill([0,0]).map(copy)
+	inventory.push(tempArmor.slice(0))
 	for (c in IndxOnInv) {
                 if (IndxOnInv[c]>-1) {
 			inventory[IndxOnInv[c]][0] = parseInt(c)
@@ -941,9 +1216,8 @@ function updateClick() {
 	click[0] = click[1] != mouseDown[0] && mouseDown[0]==1
 	click[1] = mouseDown[0]
 }
-function renderObjects() {
-	ctx.clearRect(-900,-600,1800,1200)
-        var x=0,p,q
+function renderHeight() {
+        var x=0
         while (x<15) {
                 var y=0	
 	        while (y<10) {
@@ -954,14 +1228,14 @@ function renderObjects() {
 				//(220-(220*map[x2][y2]))
 				//+",100%,"+15*(Math.cos(hr*Math.PI/12+Math.PI)+1.35)+"%)"
 				var h = map[x2][y2]
-				if (h< .1)ctx.fillStyle="hsl(192, 100%, 15%)"
-	                        else if (h< .2)ctx.fillStyle="hsl(192, 100%, 30%)"
-	                        else if (h< .3)ctx.fillStyle="hsl(192, 100%, 50%)"
-	                        else if (h< .4)ctx.fillStyle="hsl(62 , 100%, 45%)"
-	                        else if (h<.62)ctx.fillStyle="hsl(120, 100%, 30%)"
-	                        else if (h<.71)ctx.fillStyle="hsl(120 ,100%, 15%)"
-	                        else if (h<.75)ctx.fillStyle="hsl(30 ,   0%, 40%)"
-	                        else ctx.fillStyle="hsl(0  ,   0%, 90%)"
+				if      (h< .1 )ctx.fillStyle="#003d4d"
+	                        else if (h< .2 )ctx.fillStyle="#007a99"
+	                        else if (h< .3 )ctx.fillStyle="#00ccff"
+	                        else if (h< .4 )ctx.fillStyle="#dee600"
+	                        else if (h<.62 )ctx.fillStyle="#009900"
+	                        else if (h<.71 )ctx.fillStyle="#004d00"
+	                        else if (h<.75 )ctx.fillStyle="#666666"
+	                        else            ctx.fillStyle="#e6e6e6"
 				//var pxl = document.getElementById("canvas2").getContext("2d").getImageData(Math.trunc(map[x2][y2]*1000),0,1,1).data
 				//ctx.fillStyle = "rgb("+pxl[0]+","+pxl[1]+","+pxl[2]+")"
 				ctx.fillRect( x * 60 , y * 60  , 60 , 60)                             
@@ -974,6 +1248,8 @@ function renderObjects() {
 		}
 	        x++
         }
+}
+function renderObjects() {
 	var x=0
 	while (x<15) {
                 var y=0
@@ -986,8 +1262,15 @@ function renderObjects() {
 				} else if (objectMap[x2][y2][0]==26&&objectMap[x2][y2][3].storage==undefined) {
 					objectMap[x2][y2][3].storage = JSON.parse(JSON.stringify(Array(14).fill([0,0])))
 				}
+				if (objectMap[x2][y2][0]==29) {
+					createParticles(0.35+x2,0.2 +y2,0.65+x2,0.4 +y2,[1,2],[0.0015,5],2.6415,3.6415,0.03,0.055,[255,40,40,255] ,"rgb",0.08,0.1 ,2,3,50,52,0.96,0.98)
+				        createParticles(0.45+x2,0.35+y2,0.55+x2,0.55+y2,[1,2],[0.0015,5],2.6415,3.6415,0.03,0.055,[255,120,40,255],"rgb",0.07,0.09,1,2,50,52,0.96,0.98)
+					createParticles(0.45+x2,0.35+y2,0.55+x2,0.55+y2,[1,2],[0.0015,5],2.6415,3.6415,0.03,0.055,[255,190,40,255],"rgb",0.05,0.07,1,2,50,52,0.96,0.98)
+				}
+				var size = loglerp(20,60,objectMap[x2][y2][4]/10)
 				if (objectMap[x2][y2][0] > 0) {
-                                        ctx.drawImage(sprite.object, (objectMap[x2][y2][0]-1)%5*60,Math.floor((objectMap[x2][y2][0]-1)/5)*60,60,60,x*60,y*60,60,60)
+                                        ctx.drawImage(sprite.object, (objectMap[x2][y2][0]-1)%5*60,Math.floor((objectMap[x2][y2][0]-1)/5)*60,60,60,x*60+(60-size)/2,y*60+(60-size)/2,size,size)
+				        objectMap[x2][y2][4]++
 				}
 				if (objectMap[x2][y2][0] > 0 && Math.abs(x-7)+Math.abs(y-5)<=5) {
                                         ctx.fillStyle = "#f00"; ctx.fillRect(x*60, y*60-10, 60, 4)
@@ -998,17 +1281,104 @@ function renderObjects() {
 		}
 	        x++
         }
-	for (x in enemies) {
-		ctx.translate((enemies[x].x-player.pos[0]+7)*60+30,(enemies[x].y-player.pos[1]+5)*60+30)
-		ctx.rotate(enemies[x].rotation)
-		ctx.drawImage(sprite.enemies, enemies[x].id%5*60, Math.floor(enemies[x].id)/5*60, 60, 60, 
+}
+function renderEnemies() {
+        var a       
+	for (a in enemies) {
+		enemies[a].tick()
+		ctx.translate((enemies[a].x-player.pos[0]+7)*60+30+screenShake[0],(enemies[a].y-player.pos[1]+5)*60+30+screenShake[1])
+		ctx.rotate(enemies[a].rotation)
+		ctx.drawImage(sprite.enemies, enemies[a].id%5*60, Math.floor(enemies[a].id)/5*60, 60, 60, 
 		-30,-30,60,60)
 		ctx.setTransform(1,0,0,1,0,0)
-		if(enemies[x].hp<=0)player.powerups.rubyPower += player.powerups.ruby
-	        ctx.fillStyle = "#f00";ctx.fillRect((enemies[x].x-player.pos[0]+7)*60,(enemies[x].y-player.pos[1]+5)*60+10,60,5)
-	        ctx.fillStyle = "#0f0";ctx.fillRect((enemies[x].x-player.pos[0]+7)*60,(enemies[x].y-player.pos[1]+5)*60+10,Math.max(0,enemies[x].hp/enemies[x].mhp*60),5)
+		ctx.translate(screenShake[0],screenShake[1])
+		if(enemies[a].hp<=0)player.powerups.rubyPower += player.powerups.ruby
+	        ctx.fillStyle = "#f00";ctx.fillRect((enemies[a].x-player.pos[0]+7)*60,(enemies[a].y-player.pos[1]+5)*60+10,60,5)
+	        ctx.fillStyle = "#0f0";ctx.fillRect((enemies[a].x-player.pos[0]+7)*60,(enemies[a].y-player.pos[1]+5)*60+10,Math.max(0,enemies[a].hp/enemies[a].mhp*60),5)
+		ctx.fillStyle = "#aaa";ctx.fillRect((enemies[a].x-player.pos[0]+7)*60,(enemies[a].y-player.pos[1]+5)*60-5,60,5)
+		ctx.fillStyle = "#ff0";ctx.fillRect((enemies[a].x-player.pos[0]+7)*60,(enemies[a].y-player.pos[1]+5)*60-5,Math.max(0,enemies[a].cooldown/enemies[a].attackInterval*60),5)
 	}
 	enemies = enemies.filter(a => a.hp>0)
+}
+function renderBrightness() {
+        updateBrightness()
+	var x=0
+        while (x<15) {
+                var y=0	
+	        while (y<10) {
+			var x2 = x+player.pos[0]-7
+			var y2 = y+player.pos[1]-5
+                        if (x2<map[0].length&&x2>-1&&y2<map.length&&y2>-1) {
+				//ctx.fillStyle="hsl("+ 
+				//(220-(220*map[x2][y2]))
+				//+",100%,"+15*(Math.cos(hr*Math.PI/12+Math.PI)+1.35)+"%)"
+				//var pxl = document.getElementById("canvas2").getContext("2d").getImageData(Math.trunc(map[x2][y2]*1000),0,1,1).data
+				//ctx.fillStyle = "rgb("+pxl[0]+","+pxl[1]+","+pxl[2]+")"
+				ctx.fillStyle = "rgba(0,0,0,"+Math.max(Math.min(1-brightnessMap[x2][y2],1),0)+")"
+				ctx.fillRect( x * 60 , y * 60  , 60 , 60)                             
+			}                       
+                        
+			y++
+		}
+	        x++
+        }
+}
+function updateBrightness() {
+	var x=-40
+	while (x<=40) {
+                var y=-40
+	        while (y<=40) {
+			var x1 = x+player.pos[0]
+			var y1 = y+player.pos[1]
+			if (x1<map.length&&x1>-1&&y1<map.length&&y1>-1) {
+			        brightnessMap[x1][y1] = (Math.cos(hr*Math.PI/12+Math.PI)+1.1)/2.1   
+			     
+		        }
+		        y++
+	        }
+		x++
+	}
+	var x=-40
+	while (x<=40) {
+                var y=-40
+	        while (y<=40) {
+			var x1 = x+player.pos[0]
+			var y1 = y+player.pos[1]
+			if (x1<map.length&&x1>-1&&y1<map.length&&y1>-1) {
+                                if (objectMap[x1][y1][0]==29||objectMap[x1][y1][0]==21) {
+		                        var x2 = -20
+		                        while (x2<=20) {
+			                        var y2 = -20
+                                                while (y2<=20) {
+				                        var x3 = x1+x2
+				                        var y3 = y1+y2
+				                        if (x3<map.length&&x3>-1&&y3<map.length&&y3>-1) {
+					                        brightnessMap[x3][y3] += Math.min((Math.random()*0.05+0.95)/(x2**2+y2**2)*2,0.4)
+				                        }
+				                        y2++
+			                        }
+			                        x2++
+	                         	} 
+	                        } else if (objectMap[x1][y1][0]==12||objectMap[x1][y1][0]==32||objectMap[x1][y1][0]==31) {
+					var x2 = -20
+		                        while (x2<=20) {
+			                        var y2 = -20
+                                                while (y2<=20) {
+				                        var x3 = x1+x2
+				                        var y3 = y1+y2
+				                        if (x3<map.length&&x3>-1&&y3<map.length&&y3>-1) {
+					                        brightnessMap[x3][y3] += Math.min((Math.random()*0.02+0.98)/(x2**2+y2**2)*3,0.4)
+				                        }
+				                        y2++
+			                        }
+			                        x2++
+	                         	}
+				}
+		        }
+		        y++
+	        }
+		x++
+	}
 }
 function renderBars() {
 	//hp, stamina, armor, ... bar
@@ -1036,7 +1406,7 @@ function renderBars() {
 	ctx.fillStyle="#ddd"
 	var dmgAfter = 100/(player.stats.defense+100)
 	ctx.fillRect(710,530,Math.max(0,-Math.log10(dmgAfter)%1*180),25)
-	ctx.fillStyle = "#fff"
+	ctx.fillStyle = "#000"
 	if(dmgAfter>0.0001)ctx.fillText((100-dmgAfter*100).toFixed(2)+"%",800,545)
 	else ctx.fillText("1/"+(1/dmgAfter).toFixed(2),800,545)
 	//ctx.fillText(player.stats.stamina.toFixed(0)+"%",800,580)
@@ -1053,8 +1423,8 @@ function renderScreen() {
 		case "crafting":
 			ctx.fillStyle="#000000a0";ctx.fillRect(90, 85, 710, 360)
 			//ctx.fillStyle="#442200";ctx.fillRect(95, 90, 700, 350)
-			var recipesToDisplay = [],k,l,m
-			var recipesToIndex = []
+			ctx.textAlign="center";ctx.font = "21px Roboto"
+			var k,l,m,recipesToIndex = []
 			for (k in recipes) {
 				var n = true,o = false
 				for (m in recipes[k][0]) {
@@ -1070,17 +1440,16 @@ function renderScreen() {
 					}
 				}
 				if (n&&o) {
-					recipesToDisplay.push(recipes[k])
 					recipesToIndex.push(k*1)
 				}
 			} //get recipes to display
-			for (k in recipesToDisplay) {
-				var toDisplay = k*1+screenBonus[1]*30
-				if (k>29||recipesToDisplay[toDisplay]==undefined) break;
-				ctx.fillStyle = rarity_colors[items[recipesToDisplay[toDisplay][2][0]].rarity]
+			for (k in recipesToIndex) {
+				var toDisplay = recipes[recipesToIndex[k*1+screenBonus[1]*30]]
+				if (k>29||toDisplay==undefined) break;
+				ctx.fillStyle = rarity_colors[items[toDisplay[2][0]].rarity]
 				ctx.fillRect(100+k%10*70, Math.floor(k/10)*70+95, 60, 60)
 				ctx.drawImage(sprite.items, 
-				recipesToDisplay[toDisplay][2][0]%5*60, Math.floor(recipesToDisplay[toDisplay][2][0]/5)*60
+				toDisplay[2][0]%5*60, Math.floor(toDisplay[2][0]/5)*60
 				, 60, 60, 100+k%10*70, Math.floor(k/10)*70+95, 60, 60)
 			}
                         var itemsHave = Array(items.length).fill(0)                     
@@ -1088,28 +1457,29 @@ function renderScreen() {
 				if(k==34)break;
                                 itemsHave[inventory[k][0]] = inventory[k][1]
 			}
-			if (!recipesToDisplay.length) {
+			if (!recipesToIndex.length) {
 				ctx.fillStyle="#fff";ctx.fillText("You should get some resources...",445, 265)	
 		        } else {	     
 			        var q = pickup("crafting")
-			        if (q>-2&&q+screenBonus[1]*30<recipesToDisplay.length) {
+			        if (q>-2&&q+screenBonus[1]*30<recipesToIndex.length) {
 				        if (click[0]) {
                                                 craftItems(recipesToIndex[q+screenBonus[1]*30])
 				        }
-					for (k in recipesToDisplay[q][0]) {
-                                                ctx.fillStyle = rarity_colors[items[recipesToDisplay[q][0][k][0]].rarity]
+					for (k in recipes[recipesToIndex[q]][0]) {
+						var t = recipes[recipesToIndex[q]][0][k]
+                                                ctx.fillStyle = rarity_colors[items[t[0]].rarity]
 						ctx.fillRect(100+70*k,305,60,60)
-						ctx.drawImage(sprite.items, recipesToDisplay[q][0][k][0]%5*60, Math.floor(recipesToDisplay[q][0][k][0]/5)*60, 60, 60, 100+k*70, 305, 60, 60)
-					        ctx.fillStyle = recipesToDisplay[q][0][k][1] /*amt needed*/ <= itemsHave[recipesToDisplay[q][0][k][0]] /*amt have*/ ? "#0f0" : "#f00"
-						ctx.fillText(recipesToDisplay[q][0][k][1],130+70*k,370)
+						ctx.drawImage(sprite.items, t[0]%5*60, Math.floor(t[0]/5)*60, 60, 60, 100+k*70, 305, 60, 60)
+					        ctx.fillStyle = t[1] /*amt needed*/ <= itemsHave[t[0]] /*amt have*/ ? "#0f0" : "#f00"
+						ctx.fillText(t[1],130+70*k,370)
 					}
 			        } else if (q==-3&&click[0]) {
                                         screenBonus[1]-- //<
 				} else if (q==-4&click[0]) {
 					screenBonus[1]++ //>
 				}
-				if(screenBonus[1]>=0)screenBonus[1] %= Math.ceil(recipesToDisplay.length/30)
-				else screenBonus[1] = Math.ceil(recipesToDisplay.length/30)-1
+				if(screenBonus[1]>=0)screenBonus[1] %= Math.ceil(recipesToIndex.length/30)
+				else screenBonus[1] = Math.ceil(recipesToIndex.length/30)-1
 			        ctx.font = "22px Roboto"
 				ctx.textAlign = "center"
 				ctx.fillStyle = "#fff"
@@ -1164,7 +1534,7 @@ function build() {
 	        ctx.fillRect(tile[0]*60,tile[1]*60,60,60) //display transparent version of object
 		if (mouseDown[2]) {
                         if (objectMap[x2][y2][0] == 0&&map[x2][y2]>0.3) {
-                                objectMap[x2][y2] = [objects[index], objectHP[objects[index]], objectHP[objects[index]], {}]
+                                objectMap[x2][y2] = [objects[index], objectHP[objects[index]], objectHP[objects[index]], {}, 0]
 				inventory[holding][1]--
 			} //only place if target is nothing or high
 		} //place object
@@ -1179,7 +1549,7 @@ function showDetails() {
 	} else if (mousePos.y>=95&&mousePos.x>=65&&(mousePos.y%70<15||mousePos.y%70>24)&&(mousePos.x+5)%70<60&&mousePos.x<=644&&mousePos.y<=444&&screen=="inventory") {
                 touched = Math.floor((mousePos.x-65)/70)+(4-Math.floor((mousePos.y-95)/70))*7
 	}
-	if(touched!==-2&&touched<player.stats.inventorySlots&&screen=="inventory") {
+	if(touched!==-2&&touched<player.stats.inventorySlots) {
                 ctx.fillStyle = rarity_colors[items[inventory[touched][0]].rarity]
 		ctx.fillRect(640, 95, 60, 60)
 		ctx.drawImage(sprite.items, 
@@ -1222,7 +1592,7 @@ function renderInventory() {
 		        }  
 	        } 
 		if (screen=="inventory") {
-			if (q > Math.min(player.stats.inventorySlots,45)-1) {
+			if (q > Math.min(player.stats.inventorySlots,35)-1) {
 				//ctx.fillRect( q%9*70+100, 375-Math.floor(q/9)*70, 60, 60)
 			} else {
 				ctx.fillStyle = rarity_colors[items[inventory[q][0]].rarity]
@@ -1241,6 +1611,28 @@ function renderInventory() {
 		ctx.drawImage(sprite.items, out[0]%5*60, Math.floor( out[0]/5 )*60, 60, 60, mousePos.x-30, mousePos.y-30, 60, 60)
 	        ctx.fillStyle = "#fff"
 	        ctx.fillText(out[1], mousePos.x, mousePos.y+30)
+	}
+	if (screen!=="inventory")return
+	var touch = -2
+	var armors = [23,35,46,58,73,88,99,112,122]
+	if (click[0]) {
+		if (mousePos.x>=560&&mousePos.x<=620&&mousePos.y>=165&&mousePos.y<=435) {
+			if ((mousePos.y-165)%70<60) {
+                                touch = Math.floor((mousePos.y-165)/70)
+			}
+		}
+		if (touch>=0) {
+			if (out[0]==0||armors.indexOf(out[0]-touch)!==-1) {
+                                var tempOut = inventory[35][touch]
+	                        inventory[35][touch] = out[0]
+	                        out = [tempOut,1]
+			}
+		}
+	}
+	for (q in inventory[35]) {
+		ctx.fillStyle = rarity_colors[items[inventory[35][q]].rarity]
+		ctx.fillRect(560, 165+q*70, 60, 60)
+		ctx.drawImage(sprite.items, inventory[35][q]%5*60, Math.floor(inventory[35][q]/5)*60, 60, 60, 560, 165+q*70, 60, 60)
 	}
 	showDetails()
 }
@@ -1270,8 +1662,8 @@ function spawnVein(id, times, size) {
 				var chance = Math.sqrt(x**2+y**2)/size
 				var x2 = Math.max(Math.min(map.length-1,x+X),0)
 				var y2 = Math.max(Math.min(map.length-1,y+Y),0)
-				if (chance<(random.nextFloat())&&map[x2][y2]>.32&&random.nextFloat()<.2) {
-					objectMap[x2][y2] = [id, objectHP[id], objectHP[id], {}]
+				if (chance<(random.nextFloat())&&map[x2][y2]>.32&&random.nextFloat()<.1) {
+					objectMap[x2][y2] = [id, objectHP[id], objectHP[id], {}, 0]
 				}
 				y++
 			}
@@ -1280,12 +1672,15 @@ function spawnVein(id, times, size) {
 	}
 }
 function spawnEnemies() {
-	var spwnPower = Math.round((day+1)*5*Math.random())
+	var spwnPower = (Math.log(day)+1)*2.5*Math.random()*Math.sqrt(diffMult)
 	while (spwnPower>=2) {
 		if (spwnPower>=2) {
 			spwnPower-=2
 			var spawnPos = [Math.floor(Math.random()*70)-35+player.pos[0],Math.floor(Math.random()*70)-35+player.pos[1]]
-		        var a = 20       
+		        while (spawnPos[0]<0||spawnPos[0]>=map.length||spawnPos[1]<0||spawnPos[1]>=map.length) {
+				spawnPos = [Math.floor(Math.random()*70)-35+player.pos[0],Math.floor(Math.random()*70)-35+player.pos[1]]
+			}       
+			var a = 20       
 			while (objectMap[spawnPos[0]][spawnPos[1]][0]&&a-->0) {
 				spawnPos = [Math.floor(Math.random()*70)-35+player.pos[0],Math.floor(Math.random()*70)-35+player.pos[1]]
 			        console.log(spawnPos)
@@ -1294,7 +1689,7 @@ function spawnEnemies() {
 			if (a>0) {
 				enemies.push({
                                         attackInterval: 100,
-					moveInterval:40,
+					moveInterval:25,
 					rotation: 0,
 					cooldown: 0,
 					moveCooldown: 0,
@@ -1396,15 +1791,40 @@ function spawnEnemies() {
 	}
 }
 function levelUp() {
-	while (player.exp>=(player.level+1)**2*500) {
+	while (player.exp>=(player.level+1)*200) {
                 player.level++
-		player.exp-=player.level**2*500
+		player.exp-=player.level*200
 		var a = Object.keys(player.powerups)
 		var b = a.length*Math.random()<<0
 		while (a[b]=="berserkActive"||a[b]=="rubyPower") {
 			b = a.length*Math.random()<<0
 		}
-		player.powerups[a[b]]
+		player.powerups[a[b]]++
+	}
+}
+function renderGUI() {
+	ctx.fillStyle = "#000000a0"
+	ctx.fillRect(0,240,130,120)
+	ctx.drawImage(sprite.gui, 0 , 0, 30, 30, 0, 240, 30, 30)
+	ctx.drawImage(sprite.gui, 30, 0, 30, 30, 0, 270, 30, 30)
+	ctx.drawImage(sprite.gui, 60, 0, 30, 30, 0, 300, 30, 30)
+	ctx.drawImage(sprite.gui, 90, 0, 30, 30, 0, 330, 30, 30)
+	ctx.textAlign = "left";ctx.font="21px Roboto"
+	var time = Math.floor((hr%1*60)).toString().length<2?"0"+Math.floor(hr%1*60):Math.floor(hr%1*60)
+	ctx.fillStyle = "rgb(195,195,195)";ctx.fillText(Math.floor(hr)+":"+time, 40, 257)
+	ctx.fillStyle = "rgb(0,162,232)"  ;ctx.fillText(day, 40, 287)
+	ctx.fillStyle = "rgb(34,177,76)"  ;ctx.fillText(Math.floor(player.exp)+"/"+(player.level+1)*200, 40, 317)
+	ctx.fillStyle = "rgb(255,242,0)"  ;ctx.fillText("Level "+player.level, 40, 347) 
+}
+function renderPowerups() {
+	ctx.fillStyle="#000000a0";ctx.fillRect(750,0,150,120)
+	ctx.drawImage(sprite.powerups, 0, 0, 150, 120, 750, 0, 150, 120)
+	ctx.textAlign = "center";ctx.fillStyle="#fff";ctx.font = "14px Roboto"
+	var index = ["dumbbell","box","rock","milk1","milk2","glove","clover1","taser","tooth","milk3","pill","milk4","quiver","drive","berserk","book","clover2","ruby","ring"]
+	for (const n in player.powerups) {
+                if(n=="rubyPower"||n=="berserkActive")continue
+	        var q = index.indexOf(n)
+		ctx.fillText(player.powerups[n],q%5*30+765,Math.floor(q/5)*30+30)
 	}
 }
 //non gameplay functions 
@@ -1414,17 +1834,20 @@ function overflowRange(min, max, n) {
    else if (n<min) return max+(n-min)%size
    else return n 
 }
-function repeatFunc(func,times) {
-	while (times--) {
-		func()
-	}
-}
-function Load() { //creates the map on load
-    map = baseMap(width,height)
-    intv = setInterval(maps,20) //useless
+function repeatFunc(func,times){while(times--){func()}}
+var diffMult = 1
+function Load() { //creates the map on load 
+        diffMult = prompt("Difficulty?\n1. Easy\n2. Medium\n3. Hard\n4. Elite Gamer")
+	seed = prompt("Seed? (from 0 to 16777216)")
+	if (diffMult==null||diffMult==""){diffMult = 1 }else{diffMult*=1}
+	if (seed==null||seed==""||seed<0||seed>16777216){seed = Math.round(Math.random()*2**24)}else{seed*=1}
+        map = Array(height).fill(Array(width).fill(0)).map(copy)
+	random = new RNG(seed)
+	random3 = new RNG(2**24-seed)
+        intv = setInterval(maps,20) //useless
+        console.time("test")
     //heatMap = baseMap(width,height)
      /*81 == update times*/
-    var ai
     /* for(ai in Array(8).fill(0)){
         createEntity(Math.random()*400+100,Math.random()*400+100, 40 , "phsads")
         createEntity(Math.random()*400+100,Math.random()*400+100, 220 , "phsads2")
@@ -1487,21 +1910,21 @@ function format(a) {
 //map generation
 function random2(a) { //random function
     var r=[seed],h=0
-    while (h<60) {
+    while (h<70) {
         h++
         r[h] = ( (a**1.1+seed**0.7-7*a+21)*r[h-1] )%1
     }
-    return r[60]
+    return r[70]
 }
 function RNG(seed) {
   // LCG using GCC's constants
-  this.m = random2(random2(seed))*(2**31)
-  this.a = random2(random2(seed))*(2**15)
-  this.c = random2(random2(seed))*(2**12)
+  this.m = random2(seed)*(2**31)+1024
+  this.a = random2(seed)*(2**15)+128
+  this.c = random2(seed)*(2**12)+64
 
   this.state = seed ? seed : Math.floor(Math.random() * (this.m - 1));
   this.nextInt = function() {
-  this.state = (random2(this.a)*2**15 * this.state + this.c) % this.m;
+  this.state = (this.a * this.state + this.c) % this.m;
   return this.state;
   }
   this.nextFloat = function() {
@@ -1517,10 +1940,8 @@ function RNG(seed) {
 }
   this.choice = function(array) {
   return array[this.nextRange(0, array.length)];
-}
-}
-var random = new RNG(seed)
-var random3 = new RNG(2**24-seed)
+  }
+} 
 function scaleConcat(array, factor) {
 	let scaled = [];
 
@@ -1535,49 +1956,47 @@ function scaleConcat(array, factor) {
 
 	return scaled.map(copy);
 }
-function baseMap(width,height) {
-        return Array(height).fill(Array(width).fill(0)).map(copy)
-} //create the baseMap (a.k.a) map with width and height but no value
 function maps() {
-    var y1=0
-    while (y1<height) {
-        var x1=0
-        while (x1<width) {
-            map[y1][x1] += random.nextFloat()-0.5 //add a random value
-	    map[y1][x1] += random3.nextFloat()/4-0.125
-            max=Math.max(map[y1][x1],max);min=Math.min(map[y1][x1],min) //change the min max
-            x1++
-        }
-        y1++
-    }
-    times++
-    if(times%avg==0) {
-        var tempMap = map.map(copy)
-        var i,j
-        for (i in map) {
-            for (j in map[i]) {
-                var neigh=[],k=-1
-                while (k<=1) {
-                    var l=-1
-                    while (l<=1) {
-			var aby = k+(i*1)
-			var abx = l+(j*1)
-                        if (aby<height&&abx<width&&aby>-1&&abx>-1) {
-                              neigh.push(map[aby][abx])
-			}
-                        l++
-                    }
-                    k++
-                }
-                try{tempMap[i][j] = neigh.reduce((a,b) => a+b)/(neigh.length**(1-times/200))}
-		catch{console.log(i,j)}
-		max=Math.max(tempMap[i][j],max);min=Math.min(tempMap[i][j],min) //change the min max
-            }
-        } //avg things out
-        map = tempMap
-    }
+	addMaps()
+	times++
+	avgMap()
     //heatMaps() //update heatmaps
-    if (times>maxTimes){clearInterval(intv);normalize()}
+        if (times>maxTimes){addMaps();clearInterval(intv);normalize()}
+}
+function addMaps() {
+        var y1
+	for (y1 in map) {
+		for (x1 in map) {
+			var n=0
+			while (n++<avg) {
+                                map[y1][x1] += random.nextFloat()-0.5 //add a random value
+			}
+			max=Math.max(map[y1][x1],max);min=Math.min(map[y1][x1],min) //change the min max
+		}
+	}  
+}
+function avgMap() {
+	var tempMap = map.map(copy)
+        var i,j
+                for (i in map) {
+                        for (j in map[i]) {
+                                var neigh=[],k=-1
+                                while (k<=1) {
+                                        var l=-1
+                                        while (l<=1) {
+			                        var aby = k+(i*1)
+			                        var abx = l+(j*1)
+                                                if (aby<height&&abx<width&&aby>-1&&abx>-1) {
+                                                        neigh.push(map[aby][abx])
+			                        }
+                                                l++
+                                        }
+                                        k++
+                                }
+                                tempMap[i][j] = neigh.reduce((a,b) => a+b)/(neigh.length**(1-times/50))
+                        }
+                } //avg things out
+        map = tempMap
 }
 function heatMaps() {
     var y2=0
@@ -1618,24 +2037,18 @@ function heatMaps() {
 function normalize() {
         var y,z
         var i,j
+	var pow = new RNG(seed+3).nextFloat()*.5+.8
+	var halfMap = map.length/2
+	var quarterMap = map.length/4
 	for (y in map) {
                 for (z in map[y]) {
                         map[y][z] = (map[y][z]-min)/(max-min)
+			var mult = 1 - (Math.max(Math.abs(y-halfMap),Math.abs(z-halfMap),quarterMap)-quarterMap)/quarterMap
+			map[y][z] *= mult
+			map[y][z] = map[y][z] ** pow
                 }
         } //fuck efficiency
-	var tempMap = map.map(copy)
-	min = Infinity, max=-Infinity
-	var pow = new RNG(seed+3).nextFloat()*1.5+0.5
-	var halfMap = map.length/2
-	var quarterMap = map.length/4
-	for (i in map) {
-		for (j in map[i]) {
-			var mult = 1 - (Math.max(Math.abs(i-halfMap),Math.abs(j-halfMap),quarterMap)-quarterMap)/quarterMap
-			tempMap[i][j] *= mult
-			tempMap[i][j] = tempMap[i][j] ** pow
-		}
-	}
-	map = tempMap.map(copy)
+	min = Infinity,max=-Infinity
 	map = scaleConcat(map, 4)
 	var tempMap = map.map(copy)
 	for (i in map) {
@@ -1657,7 +2070,8 @@ function normalize() {
                         min = Math.min(tempMap[i][j],min) ; max = Math.max(tempMap[i][j],max)
                 }
         } //avg things out  
-        map = tempMap.map(copy)
+        map = tempMap.map(copy)       
+	for (y in map){for (z in map){map[y][z]=(map[y][z]-min)/(max-min)}}       
 	map = scaleConcat(map, 2)
 	player.pos[0] = Math.round(random.nextFloat()*(map.length-2))
         player.pos[1] = Math.round(random.nextFloat()*(map[0].length-2))
@@ -1665,22 +2079,23 @@ function normalize() {
 	        player.pos[0] = Math.floor(random.nextFloat()*(map.length-2))
 	        player.pos[1] = Math.floor(random.nextFloat()*(map[0].length-2))
         }
-	objectMap = JSON.parse(JSON.stringify(Array(map.length).fill(Array(map[0].length).fill([0,0,0,{}]))))  
+	objectMap = JSON.parse(JSON.stringify(Array(map.length).fill(Array(map[0].length).fill([0,0,0,{},0]))))  
+	brightnessMap = map.map(copy)
 	//[0] = id, [1] = hp, [2] = mhp, [3] = extra info      
-	spawnVein(1,30,62) //balsa forest
-	spawnVein(2,100,16) //stone thingy
-	spawnVein(3,80,14) //copper
-	spawnVein(4,80,12) //iron
-	spawnVein(5,32,52) //maple forest
-	spawnVein(6,70,12) //platinum
-	spawnVein(7,70,10) //mithril
-	spawnVein(8,30,52) //birch forest
-	spawnVein(9,60,10) //adam
-	spawnVein(10,60,8) //titan
-	spawnVein(11,30,46) //pine
-	spawnVein(12,50,8) //unob
-	spawnVein(13,50,6) //uni
-	terrainGradient = ctx.createLinearGradient(0,0,1000,0)
+	spawnVein(1 ,200,35) //balsa forest
+	spawnVein(2 ,800,8) //stone thingy
+	spawnVein(3 ,800,8) //copper
+	spawnVein(4 ,800,7) //iron
+	spawnVein(5 ,200,30) //maple forest
+	spawnVein(6 ,700,6) //platinum
+	spawnVein(7 ,700,6) //mithril
+	spawnVein(8 ,200,25) //birch forest
+	spawnVein(9 ,600,4) //adam
+	spawnVein(10,600,4) //titan
+	spawnVein(11,200,20) //pine
+	spawnVein(12,500,3) //unob
+	spawnVein(13,500,3) //uni
+	/*terrainGradient = ctx.createLinearGradient(0,0,1000,0)
 	terrainGradient.addColorStop(.1 ,"hsl(192, 100%, 15%)")
 	terrainGradient.addColorStop(.2 ,"hsl(192, 100%, 30%)")
 	terrainGradient.addColorStop(.3 ,"hsl(192, 100%, 50%)")
@@ -1690,10 +2105,21 @@ function normalize() {
 	terrainGradient.addColorStop(.75,"hsl(30 ,   0%, 40%)")
 	terrainGradient.addColorStop(1  ,"hsl(0  ,   0%, 90%)")
 	document.getElementById("canvas2").getContext("2d").fillStyle = terrainGradient
-	document.getElementById("canvas2").getContext("2d").fillRect(0,0,1000,1)
+	document.getElementById("canvas2").getContext("2d").fillRect(0,0,1000,1)*/
+        console.timeEnd("test")
+}
+function lerp(a,b,t) {
+	t = Math.max(Math.min(1,t),0)
+        return t*(b-a)+a
+}
+function loglerp(a,b,t) {
+	return Math.E**lerp(Math.log(a),Math.log(b),t)
 }
 var intv
 var copy = a => {return a.slice(0)}
+var keyPressed = {}
+window.onkeyup   = function (e) {keyPressed[e.key.toLowerCase()] = false}
+window.onkeydown = function (e) {keyPressed[e.key.toLowerCase()] = true }
 setInterval(update,20)
 </script>
 </html>
