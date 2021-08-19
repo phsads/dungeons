@@ -13,607 +13,64 @@
         <canvas width="1000" height="1" id="canvas2" hidden></canvas>
 	<canvas width="800" height="800" id="canvas3"></canvas>
 </body>
+<script type="text/javascript" src="gen.js"></script>
+<script type="text/javascript" src="functions.js"></script>
+<script type="text/javascript" src="variables.js"></script>
 <script>
-//non gameplay variables
-var times = 0
-var screen = ""
-var objectMap
-var seed = Math.round(Math.random()*2**24) //seed
-var attackDuration = 0 //animation
-var mousePos = {}
-var particles = []
-var click = [false, 0]
-var texts = []
-var projs = []
-var drops = []
-var enemies = []
-var holding = 0
-var screenBonus = [0,1,0,0,0,0,0,0]
-var terrainGradient
-var maxTimes = 10
-var screenShakeAmp = 0
-var screenShake = [0,0]
-var items = [
-	//name: name, mindmg, maxdmg, atkspeedmult, rarity (cosmetic), toolstrength, damagemult: [ores, trees, mobs], description 
-	{name:"Nothing"               ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "common"  , toolStrength: 0, defense: 0    ,damageMult:7, desc:"it's nothing"              },
-	{name:"Balsa Wood"            ,minDamage:2   , maxDamage:3   , atkSpeed:1   , rarity: "common"  , toolStrength: 0, defense: 0    ,damageMult:7, desc:"softboi"                   },
-	{name:"Workbench"             ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "common"  , toolStrength: 0, defense: 0    ,damageMult:7, desc:"bench"                     },
-	{name:"Balsa Wall"            ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "common"  , toolStrength: 0, defense: 0    ,damageMult:7, desc:"wall"                      },
-	{name:"Balsa Gate"            ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "common"  , toolStrength: 0, defense: 0    ,damageMult:7, desc:"wall but gate"             },
-	{name:"Balsa Bark"            ,minDamage:0   , maxDamage:0   , atkSpeed:2   , rarity: "common"  , toolStrength: 0, defense: 0    ,damageMult:7, desc:"tree skin"                 },
-	{name:"Balsa Handle"          ,minDamage:3   , maxDamage:4   , atkSpeed:1   , rarity: "common"  , toolStrength: 0, defense: 0    ,damageMult:7, desc:"softboi but handle"        },
-	{name:"Balsa Wood Pickaxe"    ,minDamage:4   , maxDamage:5   , atkSpeed:0.9 , rarity: "common"  , toolStrength: 1, defense: 0    ,damageMult:5, desc:"it go mine"                },
-	{name:"Balsa Wood Axe"        ,minDamage:5   , maxDamage:6   , atkSpeed:0.85, rarity: "common"  , toolStrength: 1, defense: 0    ,damageMult:3, desc:"it go chop chop"           },
-	{name:"Balsa Wood Sword"      ,minDamage:4   , maxDamage:5   , atkSpeed:1.1 , rarity: "common"  , toolStrength: 1, defense: 0    ,damageMult:1, desc:"it go stab"                },
-	{name:"Stone"                 ,minDamage:3   , maxDamage:4   , atkSpeed:1   , rarity: "common"  , toolStrength: 0, defense: 0    ,damageMult:7, desc:"rocc"                      },
-	{name:"Stone Pickaxe"         ,minDamage:7   , maxDamage:9   , atkSpeed:0.9 , rarity: "common"  , toolStrength: 2, defense: 0    ,damageMult:5, desc:"it go mine"                },
-	{name:"Stone Axe"             ,minDamage:9   , maxDamage:11  , atkSpeed:0.85, rarity: "common"  , toolStrength: 2, defense: 0    ,damageMult:3, desc:"it go chop chop"           },
-	{name:"Stone Sword"           ,minDamage:7   , maxDamage:9   , atkSpeed:1.1 , rarity: "common"  , toolStrength: 2, defense: 0    ,damageMult:1, desc:"it go stab"                },
-	{name:"Stone Wall"            ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "common"  , toolStrength: 0, defense: 0    ,damageMult:7, desc:"wall"                      },
-	{name:"Stone Gate"            ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "common"  , toolStrength: 0, defense: 0    ,damageMult:7, desc:"wall but gate"             },
-	{name:"Furnace"               ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "common"  , toolStrength: 0, defense: 0    ,damageMult:7, desc:"it go hot"                 },
-        {name:"Coal"                  ,minDamage:1   , maxDamage:1   , atkSpeed:1   , rarity: "common"  , toolStrength: 0, defense: 0    ,damageMult:7, desc:"it's black"                },
-	{name:"Copper Ore"            ,minDamage:3   , maxDamage:4   , atkSpeed:1   , rarity: "common"  , toolStrength: 0, defense: 0    ,damageMult:7, desc:"it's rock but copper"      },
-	{name:"Copper Ingot"          ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "common"  , toolStrength: 0, defense: 0    ,damageMult:7, desc:"it's copper but ingot"     },
-	{name:"Copper Pickaxe"        ,minDamage:11  , maxDamage:13  , atkSpeed:0.95, rarity: "common"  , toolStrength: 3, defense: 0    ,damageMult:5, desc:"mine"                      },
-	{name:"Copper Axe"            ,minDamage:13  , maxDamage:15  , atkSpeed:0.9 , rarity: "common"  , toolStrength: 3, defense: 0    ,damageMult:3, desc:"choppy chop"               },
-	{name:"Copper Sword"          ,minDamage:11  , maxDamage:13  , atkSpeed:1.15, rarity: "common"  , toolStrength: 3, defense: 0    ,damageMult:1, desc:"ow"                        },
-	{name:"Copper Helmet"         ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "common"  , toolStrength: 0, defense: 5    ,damageMult:7, desc:"it's upside down w"        },
-	{name:"Copper Chestplate"     ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "common"  , toolStrength: 0, defense: 15   ,damageMult:7, desc:"it's chestplate"           },
-	{name:"Copper Leggings"       ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "common"  , toolStrength: 0, defense: 10   ,damageMult:7, desc:"it's upside down U"        },
-	{name:"Copper Boots"          ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "common"  , toolStrength: 0, defense: 5    ,damageMult:7, desc:"it's airpods"              },
-	{name:"Iron Ore"              ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "common"  , toolStrength: 0, defense: 0    ,damageMult:7, desc:"it's rock but iron"        },
-        {name:"Iron Ingot"            ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "common"  , toolStrength: 0, defense: 0    ,damageMult:7, desc:"it's iron but ingot"       },
-	{name:"Copper Wall"           ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "common"  , toolStrength: 0, defense: 0    ,damageMult:7, desc:"you can't walk through it" },
-	{name:"Copper Gate"           ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "common"  , toolStrength: 0, defense: 0    ,damageMult:7, desc:"you can walk through it"   },
-	{name:"Anvil"                 ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "common"  , toolStrength: 0, defense: 0    ,damageMult:7, desc:"iron block"                },
-	{name:"Iron Pickaxe"          ,minDamage:20  , maxDamage:28  , atkSpeed:1   , rarity: "common"  , toolStrength: 4, defense: 0    ,damageMult:5, desc:"you can mine diamonds!"    },
-	{name:"Iron Axe"              ,minDamage:23  , maxDamage:30  , atkSpeed:0.95, rarity: "common"  , toolStrength: 4, defense: 0    ,damageMult:3, desc:"you can chop red trees"    },
-	{name:"Iron Sword"            ,minDamage:20  , maxDamage:28  , atkSpeed:1.2 , rarity: "common"  , toolStrength: 4, defense: 0    ,damageMult:1, desc:"looks more like a knife"   },
-	{name:"Iron Helmet"           ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "common"  , toolStrength: 0, defense: 10   ,damageMult:7, desc:"w but upside down"         },
-	{name:"Iron Chestplate"       ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "common"  , toolStrength: 0, defense: 30   ,damageMult:7, desc:"it's chestplate"           },
-	{name:"Iron Leggings"         ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "common"  , toolStrength: 0, defense: 20   ,damageMult:7, desc:"U but upside down"         },
-	{name:"Iron Boots"            ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "common"  , toolStrength: 0, defense: 10   ,damageMult:7, desc:"airpods+"                  },
-	{name:"Iron Wall"             ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "common"  , toolStrength: 0, defense: 0    ,damageMult:7, desc:"stone wall+"               },
-	{name:"Iron Gate"             ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "common"  , toolStrength: 0, defense: 0    ,damageMult:7, desc:"stone gate+"               },
-	{name:"Steel Ingot"           ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "common"  , toolStrength: 0, defense: 0    ,damageMult:7, desc:"iron ingot but better"     },
-	{name:"Wood Chest"            ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "common"  , toolStrength: 0, defense: 0    ,damageMult:7, desc:"it can store things"       },
-	{name:"Steel Pickaxe"         ,minDamage:32  , maxDamage:42  , atkSpeed:1.04, rarity: "common"  , toolStrength: 5, defense: 0    ,damageMult:5, desc:"iron pickaxe but better"   },
-	{name:"Steel Axe"             ,minDamage:38  , maxDamage:51  , atkSpeed:0.99, rarity: "common"  , toolStrength: 5, defense: 0    ,damageMult:3, desc:"iron axe but better"       },
-	{name:"Steel Sword"           ,minDamage:32  , maxDamage:42  , atkSpeed:1.23, rarity: "common"  , toolStrength: 5, defense: 0    ,damageMult:1, desc:"looks like an actual knife"},
-	{name:"Steel Helmet"          ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "common"  , toolStrength: 0, defense: 20   ,damageMult:7, desc:"it's still upside down w"  },
-	{name:"Steel Chestplate"      ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "common"  , toolStrength: 0, defense: 60   ,damageMult:7, desc:"it's still chestplate"     },
-	{name:"Steel Leggings"        ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "common"  , toolStrength: 0, defense: 40   ,damageMult:7, desc:"it's still upside down U"  },
-	{name:"Steel Boots"           ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "common"  , toolStrength: 0, defense: 20   ,damageMult:7, desc:"it looks like airpods"     },
-	{name:"Steel Wall"            ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "common"  , toolStrength: 0, defense: 0    ,damageMult:7, desc:"iron wall but steel"       },
-	{name:"Steel Gate"            ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "common"  , toolStrength: 0, defense: 0    ,damageMult:7, desc:"steel wall but gate"       },
-	{name:"Steel Chest"           ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "common"  , toolStrength: 0, defense: 0    ,damageMult:7, desc:"more storage because steel"},
-	{name:"Platinum Ore"          ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "uncommon", toolStrength: 0, defense: 0    ,damageMult:7, desc:"those aren't diamonds :("  },
-        {name:"Platinum Ingot "       ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "uncommon", toolStrength: 0, defense: 0    ,damageMult:7, desc:"it's good but not diamonds"},
-	{name:"Platinum Pickaxe"      ,minDamage:40  , maxDamage:55  , atkSpeed:1.05, rarity: "uncommon", toolStrength: 5, defense: 0    ,damageMult:5, desc:"let's pretend it's diamond"},
-	{name:"Platinum Axe"          ,minDamage:45  , maxDamage:65  , atkSpeed:1   , rarity: "uncommon", toolStrength: 5, defense: 0    ,damageMult:3, desc:"let's pretend it's diamond"},
-	{name:"Platinum Sword"        ,minDamage:40  , maxDamage:55  , atkSpeed:1.25, rarity: "uncommon", toolStrength: 5, defense: 0    ,damageMult:1, desc:"diamond blade, very cool"  },
-	{name:"Platinum Helmet"       ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "uncommon", toolStrength: 0, defense: 40   ,damageMult:7, desc:"it's still upside down w"  },
-	{name:"Platinum Chestplate"   ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "uncommon", toolStrength: 0, defense: 120  ,damageMult:7, desc:"it's still chestplate"     },
-	{name:"Platinum Leggings"     ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "uncommon", toolStrength: 0, defense: 80   ,damageMult:7, desc:"it's still upside down U"  },
-	{name:"Platinum Boots"        ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "uncommon", toolStrength: 0, defense: 40   ,damageMult:7, desc:"it looks like airpods"     },
-	{name:"Platinum Wall"         ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "uncommon", toolStrength: 0, defense: 0    ,damageMult:7, desc:"diamond block"             },
-	{name:"Platinum Gate"         ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "uncommon", toolStrength: 0, defense: 0    ,damageMult:7, desc:"diamond gate"              },
-	{name:"Maple Wood"            ,minDamage:2   , maxDamage:3   , atkSpeed:1   , rarity: "uncommon", toolStrength: 0, defense: 0    ,damageMult:7, desc:"gray boi"                  },
-	{name:"Maple Handle"          ,minDamage:3   , maxDamage:4   , atkSpeed:1   , rarity: "uncommon", toolStrength: 0, defense: 0    ,damageMult:7, desc:"gray boi but handle"       },
-	{name:"Maple Wall"            ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "uncommon", toolStrength: 0, defense: 0    ,damageMult:7, desc:"wall"                      },
-	{name:"Maple Gate"            ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "uncommon", toolStrength: 0, defense: 0    ,damageMult:7, desc:"wall but gate"             },
-	{name:"Mithril Ore"           ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "uncommon", toolStrength: 0, defense: 0    ,damageMult:7, desc:"dark diamonds"             },
-        {name:"Mithril Ingot"         ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "uncommon", toolStrength: 0, defense: 0    ,damageMult:7, desc:"igot"                      },
-	{name:"Mithril Pickaxe"       ,minDamage:70  , maxDamage:90  , atkSpeed:1.1 , rarity: "uncommon", toolStrength: 6, defense: 0    ,damageMult:5, desc:"looks like a hammer"       },
-	{name:"Mithril Axe"           ,minDamage:85  , maxDamage:110 , atkSpeed:1.05, rarity: "uncommon", toolStrength: 6, defense: 0    ,damageMult:3, desc:"chop chop"                 },
-	{name:"Mithril Sword"         ,minDamage:70  , maxDamage:90  , atkSpeed:1.3 , rarity: "uncommon", toolStrength: 0, defense: 0    ,damageMult:1, desc:"very cool sword"           },
-	{name:"Mithril Helmet"        ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "uncommon", toolStrength: 0, defense: 80   ,damageMult:7, desc:"it's still upside down w"  },
-	{name:"Mithril Chestplate"    ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "uncommon", toolStrength: 0, defense: 240  ,damageMult:7, desc:"it's still chestplate"     },
-	{name:"Mithril Leggings"      ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "uncommon", toolStrength: 0, defense: 160  ,damageMult:7, desc:"it's still upside down U"  },
-	{name:"Mithril Boots"         ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "uncommon", toolStrength: 0, defense: 80   ,damageMult:7, desc:"it looks like airpods"     },
-	{name:"Mithril Wall"          ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "uncommon", toolStrength: 0, defense: 0    ,damageMult:7, desc:"block"                     },
-	{name:"Mithril Gate"          ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "uncommon", toolStrength: 0, defense: 0    ,damageMult:7, desc:"gate"                      },
-	{name:"Birch Wood"            ,minDamage:2   , maxDamage:3   , atkSpeed:1   , rarity: "uncommon", toolStrength: 0, defense: 0    ,damageMult:7, desc:"whiteboi"                  },
-	{name:"Birch Handle"          ,minDamage:3   , maxDamage:4   , atkSpeed:1   , rarity: "uncommon", toolStrength: 0, defense: 0    ,damageMult:7, desc:"whiteboi but handle"       },
-	{name:"Birch Wall"            ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "uncommon", toolStrength: 0, defense: 0    ,damageMult:7, desc:"wall"                      },
-	{name:"Birch Gate"            ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "uncommon", toolStrength: 0, defense: 0    ,damageMult:7, desc:"wall but gate"             },
-	{name:"Adamantite Ore"        ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "rare"    , toolStrength: 0, defense: 0    ,damageMult:7, desc:"budget emerald"            },
-        {name:"Adamantite Ingot"      ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "rare"    , toolStrength: 0, defense: 0    ,damageMult:7, desc:"igot"                      },
-	{name:"Adamantite Pickaxe"    ,minDamage:120 , maxDamage:150 , atkSpeed:1.15, rarity: "rare"    , toolStrength: 7, defense: 0    ,damageMult:5, desc:"looks like a hammer"       },
-	{name:"Adamantite Axe"        ,minDamage:135 , maxDamage:169 , atkSpeed:1.1 , rarity: "rare"    , toolStrength: 7, defense: 0    ,damageMult:3, desc:"chop chop"                 },
-	{name:"Adamantite Sword"      ,minDamage:120 , maxDamage:150 , atkSpeed:1.35, rarity: "rare"    , toolStrength: 0, defense: 0    ,damageMult:1, desc:"even cooler sword"         },
-	{name:"Adamantite Helmet"     ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "rare"    , toolStrength: 0, defense: 160  ,damageMult:7, desc:"it's still upside down w"  },
-	{name:"Adamantite Chestplate" ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "rare"    , toolStrength: 0, defense: 480  ,damageMult:7, desc:"it's still chestplate"     },
-	{name:"Adamantite Leggings"   ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "rare"    , toolStrength: 0, defense: 320  ,damageMult:7, desc:"it's still upside down U"  },
-	{name:"Adamantite Boots"      ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "rare"    , toolStrength: 0, defense: 160  ,damageMult:7, desc:"it looks like airpods"     },
-	{name:"Adamantite Wall"       ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "rare"    , toolStrength: 0, defense: 0    ,damageMult:7, desc:"block"                     },
-	{name:"Adamantite Gate"       ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "rare"    , toolStrength: 0, defense: 0    ,damageMult:7, desc:"gate"                      },
-	{name:"Titanium Ore"          ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "rare"    , toolStrength: 0, defense: 0    ,damageMult:7, desc:"looks like a titan"        },
-        {name:"Titanium Ingot"        ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "rare"    , toolStrength: 0, defense: 0    ,damageMult:7, desc:"like your mom"             },
-	{name:"Titanium Pickaxe"      ,minDamage:200 , maxDamage:300 , atkSpeed:1.2 , rarity: "rare"    , toolStrength: 8, defense: 0    ,damageMult:5, desc:"looks like a hammer"       },
-	{name:"Titanium Axe"          ,minDamage:240 , maxDamage:350 , atkSpeed:1.15, rarity: "rare"    , toolStrength: 8, defense: 0    ,damageMult:3, desc:"chop chop"                 },
-	{name:"Titanium Sword"        ,minDamage:200 , maxDamage:300 , atkSpeed:1.4 , rarity: "rare"    , toolStrength: 0, defense: 0    ,damageMult:1, desc:"even cooler sword"         },
-	{name:"Titanium Helmet"       ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "rare"    , toolStrength: 0, defense: 320  ,damageMult:7, desc:"gooder iron armor"         },
-	{name:"Titanium Chestplate"   ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "rare"    , toolStrength: 0, defense: 960  ,damageMult:7, desc:"it's still chestplate"     },
-	{name:"Titanium Leggings"     ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "rare"    , toolStrength: 0, defense: 640  ,damageMult:7, desc:"it's still upside down U"  },
-	{name:"Titanium Boots"        ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "rare"    , toolStrength: 0, defense: 320  ,damageMult:7, desc:"it looks like airpods"     },
-	{name:"Titanium Wall"         ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "rare"    , toolStrength: 0, defense: 0    ,damageMult:7, desc:"block"                     },
-	{name:"Titanium Gate"         ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "rare"    , toolStrength: 0, defense: 0    ,damageMult:7, desc:"gate"                      },
-	{name:"Pine Wood"             ,minDamage:2   , maxDamage:3   , atkSpeed:1   , rarity: "epic"    , toolStrength: 0, defense: 0    ,damageMult:7, desc:"darkboi"                   },
-	{name:"Pine Handle"           ,minDamage:3   , maxDamage:4   , atkSpeed:1   , rarity: "epic"    , toolStrength: 0, defense: 0    ,damageMult:7, desc:"darkboi but handle"        },
-	{name:"Unobtainium Ore"       ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "epic"    , toolStrength: 0, defense: 0    ,damageMult:7, desc:"glow in the dark"          },
-        {name:"Unobtainium Ingot"     ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "epic"    , toolStrength: 0, defense: 0    ,damageMult:7, desc:"uranu"                     },
-	{name:"Unobtainium Pickaxe"   ,minDamage:666 , maxDamage:777 , atkSpeed:1.25, rarity: "epic"    , toolStrength: 9, defense: 0    ,damageMult:5, desc:"looks like a hammer"       },
-	{name:"Unobtainium Axe"       ,minDamage:789 , maxDamage:891 , atkSpeed:1.2 , rarity: "epic"    , toolStrength: 9, defense: 0    ,damageMult:3, desc:"yay better hammer"         },
-	{name:"Unobtainium Sword"     ,minDamage:666 , maxDamage:777 , atkSpeed:1.45, rarity: "epic"    , toolStrength: 0, defense: 0    ,damageMult:1, desc:"feels like a toy"          },
-	{name:"Unobtainium Helmet"    ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "epic"    , toolStrength: 0, defense: 640  ,damageMult:7, desc:"it's still upside down w"  },
-	{name:"Unobtainium Chestplate",minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "epic"    , toolStrength: 0, defense: 1920 ,damageMult:7, desc:"it's still chestplate"     },
-	{name:"Unobtainium Leggings"  ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "epic"    , toolStrength: 0, defense: 1280 ,damageMult:7, desc:"it's still upside down U"  },
-	{name:"Unobtainium Boots"     ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "epic"    , toolStrength: 0, defense: 640  ,damageMult:7, desc:"it looks like airpods"     },
-	{name:"Unobtainium Wall"      ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "epic"    , toolStrength: 0, defense: 0    ,damageMult:7, desc:"block"                     },
-	{name:"Unobtainium Gate"      ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity: "epic"    , toolStrength: 0, defense: 0    ,damageMult:7, desc:"gate"                      },
-	{name:"Raw Crystal"           ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity:"legendary", toolStrength: 0, defense: 0    ,damageMult:7, desc:"shiny"                     },
-	{name:"Crystal Pickaxe"       ,minDamage:1300, maxDamage:2000, atkSpeed:1.3 , rarity:"legendary", toolStrength:10, defense: 0    ,damageMult:5, desc:"shiny hammer"              },
-	{name:"Crystal Axe"           ,minDamage:1700, maxDamage:2500, atkSpeed:1.25, rarity:"legendary", toolStrength:10, defense: 0    ,damageMult:3, desc:"shiny chop chop"           },
-	{name:"Crystal Sword"         ,minDamage:1300, maxDamage:2000, atkSpeed:1.5 , rarity:"legendary", toolStrength: 0, defense: 0    ,damageMult:1, desc:"crystal edge"              },
-	{name:"Crystal Helmet"        ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity:"legendary", toolStrength: 0, defense: 1280 ,damageMult:7, desc:"nice color scheme"         },
-	{name:"Crystal Chestplate"    ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity:"legendary", toolStrength: 0, defense: 3840 ,damageMult:7, desc:"very cool"                 },
-	{name:"Crystal Leggings"      ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity:"legendary", toolStrength: 0, defense: 2560 ,damageMult:7, desc:"it protec leg"             },
-	{name:"Crystal Boots"         ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity:"legendary", toolStrength: 0, defense: 1280 ,damageMult:7, desc:"it protec foot"            },
-	{name:"Crystal Wall"          ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity:"legendary", toolStrength: 0, defense: 0    ,damageMult:7, desc:"block"                     },
-	{name:"Crystal Gate"          ,minDamage:2   , maxDamage:2   , atkSpeed:1   , rarity:"legendary", toolStrength: 0, defense: 0    ,damageMult:7, desc:"gate"                      },
-        {name:"Torch"                 ,minDamage:2   , maxDamage:3   , atkSpeed:1   , rarity: "common"  , toolStrength: 0, defense: 0    ,damageMult:7, desc:"hotboi"                    },
-]
-var unlocked = Array(items.length).fill(false)
-var recipes = [
-        [   [[1 , 4 ]                    ] , [16, 0] , [2 , 1]  ], //workbench
-	[   [[1 , 1 ]                    ] , [16   ] , [5 , 2]  ], //make bark
-	[   [[1 , 2 ]                    ] , [16   ] , [6 , 1]  ], //balsa handle
-	[   [[1 , 6 ]                    ] , [16   ] , [3 , 1]  ], //balsa wall
-	[   [[1 , 6 ]                    ] , [16   ] , [4 , 1]  ], //balsa gate
-	[   [[6 , 1 ] , [1 , 4] , [5 , 3]] , [16   ] , [7 , 1]  ], //balsa pick
-	[   [[6 , 1 ] , [1 , 4] , [5 , 3]] , [16   ] , [8 , 1]  ], //balsa axe
-	[   [[6 , 1 ] , [1 , 3] , [5 , 3]] , [16   ] , [9 , 1]  ], //balsa sword
-	[   [[6 , 1 ] , [10, 5] , [5 , 3]] , [16   ] , [11, 1]  ], //stone pick
-	[   [[6 , 1 ] , [10, 5] , [5 , 3]] , [16   ] , [12, 1]  ], //stone axe
-	[   [[6 , 1 ] , [10, 4] , [5 , 3]] , [16   ] , [13, 1]  ], //stone sword
-	[   [[10, 6 ]                    ] , [16   ] , [14, 1]  ], //stone wall
-	[   [[10, 6 ]                    ] , [16   ] , [15, 1]  ], //stone gate
-	[   [[10, 10]                    ] , [16   ] , [16, 1]  ], //furnace
-	[   [[1 , 1 ]                    ] , [21   ] , [17, 1]  ], //coal
-	[   [[18, 1 ] , [17, 2]          ] , [21   ] , [19, 1]  ], //copper ingot
-	[   [[6 , 1 ] , [19, 6] , [5 , 3]] , [16   ] , [20, 1]  ], //copper pick
-	[   [[6 , 1 ] , [19, 6] , [5 , 3]] , [16   ] , [21, 1]  ], //copper axe
-	[   [[6 , 1 ] , [19, 5] , [5 , 3]] , [16   ] , [22, 1]  ], //copper sword
-	[   [[19, 5 ]                    ] , [22   ] , [23, 1]  ], //copper helm
-	[   [[19, 15]                    ] , [22   ] , [24, 1]  ], //chestplate
-	[   [[19, 10]                    ] , [22   ] , [25, 1]  ], //leggings
-	[   [[19, 5 ]                    ] , [22   ] , [26, 1]  ], //boots
-	[   [[27, 1 ] , [17, 2]          ] , [21   ] , [28, 1]  ], //iron ingot
-	[   [[19, 6 ]                    ] , [22   ] , [29, 1]  ], //copper wall
-	[   [[19, 6 ]                    ] , [22   ] , [30, 1]  ], //copper gate
-	[   [[28, 9 ]                    ] , [16   ] , [31, 1]  ], //anvil
-	[   [[6 , 1 ] , [28, 7]          ] , [22   ] , [32, 1]  ], //iron pick
-	[   [[6 , 1 ] , [28, 7]          ] , [22   ] , [33, 1]  ], //iron axe
-	[   [[6 , 1 ] , [28, 6]          ] , [22   ] , [34, 1]  ], //iron sword
-	[   [[28, 5 ]                    ] , [22   ] , [35, 1]  ], //iron helm
-	[   [[28, 15]                    ] , [22   ] , [36, 1]  ], //iron chestplate
-	[   [[28, 10]                    ] , [22   ] , [37, 1]  ], //iron leggings
-	[   [[28, 5 ]                    ] , [22   ] , [38, 1]  ], //iron boots
-	[   [[28, 6 ]                    ] , [22   ] , [39, 1]  ], //rion wall
-	[   [[28, 6 ]                    ] , [22   ] , [40, 1]  ], //iron gate
-	[   [[28, 3 ] , [17, 5]          ] , [22   ] , [41, 1]  ], //steel ingot
-	[   [[1 , 12] , [10, 6]          ] , [16   ] , [42, 1]  ], //chest
-	[   [[32, 1 ] , [41, 5]          ] , [22   ] , [43, 1]  ], //steel pick
-	[   [[33, 1 ] , [41, 7]          ] , [22   ] , [44, 1]  ], //steel axe
-	[   [[34, 1 ] , [41, 7]          ] , [22   ] , [45, 1]  ], //steel sword
-	[   [[41, 3 ] , [35, 1]          ] , [22   ] , [46, 1]  ], //iron helm
-	[   [[41, 4 ] , [35, 1]          ] , [22   ] , [47, 1]  ], //iron chestplate
-	[   [[41, 3 ] , [35, 1]          ] , [22   ] , [48, 1]  ], //iron leggings
-	[   [[41, 2 ] , [35, 1]          ] , [22   ] , [49, 1]  ], //iron boots
-	[   [[41, 6 ]                    ] , [22   ] , [50, 1]  ], //steel wall
-	[   [[41, 6 ]                    ] , [22   ] , [51, 1]  ], //steel gate
-	[   [[28, 8]  , [41, 4]          ] , [16   ] , [52, 1]  ], //steel chest
-	[   [[53, 1 ] , [17, 4]          ] , [21   ] , [54, 1]  ], //platinum ingot
-	[   [[65, 1 ] , [54, 8]          ] , [22   ] , [55, 1]  ], //platinum pick
-	[   [[65, 1 ] , [54, 8]          ] , [22   ] , [56, 1]  ], //platinum axe
-	[   [[65, 1 ] , [54, 7]          ] , [22   ] , [57, 1]  ], //platinum sword
-	[   [[54, 5 ]                    ] , [22   ] , [58, 1]  ], //platinum helm
-	[   [[54, 15]                    ] , [22   ] , [59, 1]  ], //platinum chestplate
-	[   [[54, 10]                    ] , [22   ] , [60, 1]  ], //platinum leggings
-	[   [[54, 5 ]                    ] , [22   ] , [61, 1]  ], //platinum boots
-	[   [[54, 6 ]                    ] , [22   ] , [62, 1]  ], //platinum wall
-	[   [[54, 6 ]                    ] , [22   ] , [63, 1]  ], //platinum gate
-	[   [[64, 3 ]                    ] , [16   ] , [65, 1]  ], //maple handle
-	[   [[64, 6 ]                    ] , [16   ] , [66, 1]  ], //maple wall
-	[   [[64, 6 ]                    ] , [16   ] , [67, 1]  ], //maple gate
-	[   [[68, 1 ] , [17, 5]          ] , [21   ] , [69, 1]  ], //mithril ingot
-	[   [[55, 1 ] , [69, 5]          ] , [22   ] , [70, 1]  ], //mithril pick
-	[   [[56, 1 ] , [69, 5]          ] , [22   ] , [71, 1]  ], //mithril axe
-	[   [[57, 1 ] , [69, 4]          ] , [22   ] , [72, 1]  ], //mithril sword
-	[   [[69, 5 ]                    ] , [22   ] , [73, 1]  ], //mithril helm
-	[   [[69, 15]                    ] , [22   ] , [74, 1]  ], //mithril chestplate
-	[   [[69, 10]                    ] , [22   ] , [75, 1]  ], //mithril leggings
-	[   [[69, 5 ]                    ] , [22   ] , [76, 1]  ], //mithril boots
-	[   [[69, 6 ]                    ] , [22   ] , [77, 1]  ], //mithril wall
-	[   [[69, 6 ]                    ] , [22   ] , [78, 1]  ], //mithril gate
-	[   [[79, 4 ]                    ] , [16   ] , [80, 1]  ], //birch handle
-	[   [[79, 6 ]                    ] , [16   ] , [81, 1]  ], //birch wall
-	[   [[79, 6 ]                    ] , [16   ] , [82, 1]  ], //birch gate
-	[   [[83, 1 ] , [17, 5]          ] , [21   ] , [84, 1]  ], //adamantite ingot
-	[   [[80, 1 ] , [84, 9]          ] , [22   ] , [85, 1]  ], //adamantite pick
-	[   [[80, 1 ] , [84, 9]          ] , [22   ] , [86, 1]  ], //adamantite axe
-	[   [[80, 1 ] , [84, 8]          ] , [22   ] , [87, 1]  ], //adamantite sword
-	[   [[84, 5 ]                    ] , [22   ] , [88, 1]  ], //adamantite helm
-	[   [[84, 15]                    ] , [22   ] , [89, 1]  ], //adamantite chestplate
-	[   [[84, 10]                    ] , [22   ] , [90, 1]  ], //adamantite leggings
-	[   [[84, 5 ]                    ] , [22   ] , [91, 1]  ], //adamantite boots
-	[   [[84, 6 ]                    ] , [22   ] , [92, 1]  ], //adamantite wall
-	[   [[84, 6 ]                    ] , [22   ] , [93, 1]  ], //adamantite gate
-	[   [[94, 1 ] , [17, 6]          ] , [21   ] , [95, 1]  ], //titanium ingot
-	[   [[85, 1 ] , [95, 6]          ] , [22   ] , [96, 1]  ], //titanium pick
-	[   [[86, 1 ] , [95, 6]          ] , [22   ] , [97, 1]  ], //titanium axe
-	[   [[87, 1 ] , [95, 5]          ] , [22   ] , [98, 1]  ], //titanium sword
-	[   [[95, 5 ]                    ] , [22   ] , [99, 1]  ], //titanium helm
-	[   [[95, 15]                    ] , [22   ] , [100, 1]  ], //titanium chestplate
-	[   [[95, 10]                    ] , [22   ] , [101, 1]  ], //titanium leggings
-	[   [[95, 5 ]                    ] , [22   ] , [102, 1]  ], //titanium boots
-	[   [[95, 6 ]                    ] , [22   ] , [103, 1]  ], //titanium wall
-	[   [[95, 6 ]                    ] , [22   ] , [104, 1]  ], //titanium gate
-	[   [[105, 5]                    ] , [16   ] , [106, 1]  ], //pine handle
-	[   [[107, 1] , [17, 6]          ] , [21   ] , [108, 1]  ], //unob ingot
-	[   [[106, 1] , [108, 10]        ] , [22   ] , [109, 1]  ], //unob pick
-	[   [[106, 1] , [108, 10]        ] , [22   ] , [110, 1]  ], //unob axe
-	[   [[106, 1] , [108, 9]         ] , [22   ] , [111, 1]  ], //unob sword
-	[   [[108, 5 ]                   ] , [22   ] , [112, 1]  ], //unob helm
-	[   [[108, 15]                   ] , [22   ] , [113, 1]  ], //unob chestplate
-	[   [[108, 10]                   ] , [22   ] , [114, 1]  ], //unob leggings
-	[   [[108, 5 ]                   ] , [22   ] , [115, 1]  ], //unob boots
-	[   [[108, 6 ]                   ] , [22   ] , [116, 1]  ], //unob wall
-	[   [[108, 6 ]                   ] , [22   ] , [117, 1]  ], //unob gate
-	[   [[106, 1] , [108, 15]        ] , [22   ] , [119, 1]  ], //crystal pick
-	[   [[106, 1] , [108, 15]        ] , [22   ] , [120, 1]  ], //crystal axe
-	[   [[106, 1] , [108, 15]        ] , [22   ] , [121, 1]  ], //crystal sword
-	[   [[108, 10]                   ] , [22   ] , [122, 1]  ], //crystal helm
-	[   [[108, 25]                   ] , [22   ] , [123, 1]  ], //crystal chestplate
-	[   [[108, 15]                   ] , [22   ] , [124, 1]  ], //crystal leggings
-	[   [[108, 10]                   ] , [22   ] , [125, 1]  ], //crystal boots
-	[   [[108, 7 ]                   ] , [22   ] , [126, 1]  ], //crystal wall
-	[   [[108, 7 ]                   ] , [22   ] , [127, 1]  ], //crystal gate
-	[   [[6 ,  1 ] , [17, 1]         ] , [21   ] , [128, 1]  ], //torch
-]
-var inventory = [
-	[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],
-	[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],
-	[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],
-	[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],
-	[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],
-	[0, 0, 0, 0]
-]
-var lootTables = [
-	[],
-        [[1 , 3, 5]                      ], //balsa
-	[[10, 3, 5]                      ], //stone
-	[[18, 2, 3], [10, 80], [10, 100] ], //copper ore
-	[[27, 2, 3], [10, 80], [10, 100] ], //iron ore
-	[[64, 3, 5]                      ], //maple
-	[[53, 2, 3], [10, 80], [10, 100] ], //platinum
-	[[68, 4, 5]                      ], //mithril
-	[[79, 3, 5]                      ], //birch
-	[[83, 3, 4], [10, 80], [10, 100] ], //adamantite
-	[[94, 3, 4], [10, 80], [10, 100] ], //titanium
-	[[105, 3, 5]                     ], //pine
-	[[107, 3, 4], [10, 80], [10, 100]], //unobtain
-	[[118, 4, 5]                     ], //crystal
-	[[3 , 1, 1]                      ], //wood wall
-	[[4 , 1, 1]                      ], //wood gate
-	[[2 , 1, 1]                      ], //bench
-	[[14, 1, 1]                      ], //stone wall
-	[[15, 1, 1]                      ], //stone gate
-	[[29, 1, 1]                      ], //copper wall
-	[[30, 1, 1]                      ], //copper gate
-	[[16, 1, 1]                      ], //furnace
-	[[31, 1, 1]                      ], //anvil
-	[[39, 1, 1]                      ], //iron wall
-	[[40, 1, 1]                      ], //iron gate
-	[[42, 1, 1]                      ], //chest
-	[[52, 1, 1]                      ], //steel chest
-	[[50, 1, 1]                      ], //steel wall
-	[[51, 1, 1]                      ], //steel gate
-	[[128, 1, 1]                     ], //tochr
-	[[62, 1, 1]                      ], //platinum wall
-	[[63, 1, 1]                      ], //platinum gate
-	[[77, 1, 1]                      ], //mihtirl wall
-	[[78, 1, 1]                      ], //mi gate
-	[[92, 1, 1]                      ], //adam wall
-	[[93, 1, 1]                      ], //adam gate
-	[[66, 1, 1]                      ], //map wall
-	[[67, 1, 1]                      ], //map gate
-	[[103, 1, 1]                      ], //titan wall
-	[[104, 1, 1]                      ], //titan gate
-	[[81, 1, 1]                      ], //birch wall
-	[[82, 1, 1]                      ], //birch gate
-	[[116, 1, 1]                      ], //unob wall
-	[[117, 1, 1]                      ], //unob gate
-	[[126, 1, 1]                      ], //crystal wall
-	[[127, 1, 1]                      ], //crystal gate
-]
-var out = [0,0]
-var toolStrengthReq = [0, 
-0, 1, 2, 3, 4, 
-4, 5, 6, 6, 7,
-8, 8, 9, 0, 0,
-0, 1, 1, 2, 2,
-1, 3, 3, 3, 1,
-4, 4, 4, 0, 5,
-5, 6, 6, 7, 7,
-4, 4, 8, 8, 7,
-7, 9, 9, 10,10
-]
-var bitCheck = [
-	1, 2, 2, 2, 1,
-	2, 2, 1, 2, 2,
-	1, 2, 2, 1, 1,
-	1, 2, 2, 2, 2,
-	2, 2, 2, 2, 1,
-	2, 2, 2, 1, 2,
-	2, 2, 2, 2, 2,
-	1, 1, 2, 2, 1,
-	1, 2, 2, 2, 2,
-]
-var objectHP =  [0, 
-        10  , 25  , 40   , 75  , 250 , 
-	300 , 1000 , 2500 , 3000, 6969, 
-	13579, 22222, 50000, 50  , 25  ,
-	75  , 100 , 50  , 200 , 100 , 
-	125 , 250 , 400 , 200 , 50  ,
-	500 , 600 , 300 , 30  , 1200,
-	600, 2400, 1200, 5000, 2500,
-	300, 150, 10000, 5000, 3600,
-	1800, 20000, 10000, 60000, 30000
-]
-var player = {
-	pos: [],
-	stats: {
-		hp: 100,
-		mhp: 100,
-		stamina: 100,
-		staminaCMult:1,
-		defense: 0,
-		attackSpeed: 1,
-		reach: 40,
-		critChance: 5,
-		critDamage: 140,
-		inventorySlots: 14,
-		regen: 0,
-	},
-	exp: 0,
-	level: 0,
-	attackCooldown: 0,
-	powerups: {
-		dumbbell: 0,
-		box: 0,
-		rock: 0,
-		milk1: 0, //chocy milk
-		milk2: 0, //milk
-		glove: 0,
-		clover1: 0, //4 leaf
-		taser: 0,
-		tooth: 0,
-		milk3: 0, //soy milk
-		pill: 0,
-		milk4: 0,
-		quiver: 0, 
-		drive: 0,
-		berserk: 0,
-		berserkActive:0, //not a powerup
-		book: 0,
-		clover2: 0, //5-leaf
-		ruby: 0,
-		rubyPower: 0, //not a powerup 2
-		ring: 0,
-	},
-	moveCooldown:[0,0,0,0]
-}
-function calculateDamage() {
-	var dmgMult = 1 , crit = 0
-	if (Math.random() < (player.powerups.clover2**0.6)/100) {
-		dmgMult *= Math.log(player.powerups.clover2)*15;crit=2
-	}
-	if(Math.random() < player.stats.critChance/100) {
-		dmgMult *= player.stats.critDamage/100+1;crit=1
-	} //crit
-	dmgMult *= player.powerups.dumbbell*0.04+1
-	var i = items[inventory[holding][0]] //item (base damage)
-        updateStats()
-        return [Math.round(randomRange(i.minDamage, i.maxDamage)*dmgMult),crit]
-	update()
-}
-function updateStats() {
-	var baseStats = {
-		hp: player.stats.hp,
-		mhp: 100,
-		stamina: player.stats.stamina,
-		staminaCMult: 1,
-		movementSpeed: 1,
-		defense: 0,
-		attackSpeed: 1,
-		reach: 40,
-		critChance: 5,
-		critDamage: 140,
-		inventorySlots: 14,
-		regen: 0,
-	}
-	//drive
-	var b = []
-	b[0] = player.stats.hp/player.stats.mhp<player.powerups.drive/(10+player.powerups.drive) ? player.powerups.drive**0.4 : 0
-	//berserk
-        b[1] = player.powerups.berserkActive>0?Math.log(player.powerups.berserk):0
-	//ruby
-	b[2] = player.powerups.rubyPower
-	baseStats.defense        += items[inventory[35][0]].defense
-	baseStats.defense        += items[inventory[35][1]].defense
-	baseStats.defense        += items[inventory[35][2]].defense
-	baseStats.defense        += items[inventory[35][3]].defense
-	baseStats.inventorySlots += player.powerups.box*2
-	baseStats.critDamage     += player.powerups.rock*8+b[1]*2
-	baseStats.attackSpeed    += player.powerups.milk1*0.045+b[1]/2
-	baseStats.defense        *= player.powerups.milk2*0.05+b[2]/100+1
-	baseStats.reach          += player.powerups.glove*4
-	baseStats.critChance     += player.powerups.clover1*10+b[2]/1000
-	baseStats.staminaCMult   *= 3/(player.powerups.milk3+3)*10000/(b[2]+10000)
-	baseStats.movementSpeed  *= 5/(player.powerups.ring+5)*10000/(b[2]+10000)
-        baseStats.mhp            += player.powerups.pill*20+b[2]
-	baseStats.regen          += player.powerups.milk4*0.02
-        //boosts
-	baseStats.defense *= b[0]+1
-	baseStats.critDamage *= b[0]/1.4+1
-	baseStats.attackSpeed *= b[0]/3+1
-	baseStats.reach += b[0]*1.3+1
-	baseStats.critChance += b[0]+1
-	baseStats.staminaCMult /= b[0]/2+1
-	baseStats.regen *= b[0]+1
-	baseStats.hp = Math.min(baseStats.regen+baseStats.hp,baseStats.mhp)
-	player.stats = baseStats
-}
 function attack() {
 	var rotation = -Math.atan2(mousePos.x-450,mousePos.y-330)+Math.PI
 	var lifesteal = player.powerups.tooth*0.01
-	var xpMult = player.powerups.book*.25+1 
-	var x = -9
-	while (x<=9) {
-		var y = -9
-		while (y<=9) {
-                        if (circleCollision(0.5+51/60*Math.sin(rotation),0.5-51/60*Math.cos(rotation), player.stats.reach/60, 0.5+x, 0.5+y, Math.SQRT1_2)) {                           
+	var xpMult = player.powerups.book*.25+1
+	var attackX = .5+51/60*Math.sin(rotation)+player.pos[0]
+	var attackY = .5-51/60*Math.cos(rotation)+player.pos[1] 
+	var x = -6
+	while (x<=6) {
+		var y = -6
+		while (y<=6) {
+                        if (circleCollision(attackX, attackY, player.stats.reach/60, .5+x+player.pos[0], .5+y+player.pos[1], Math.SQRT1_2)) {                           
 				var x2 = player.pos[0]+x
-			
 				var y2 = player.pos[1]+y
 				if (map[x2]==undefined||map[0][y2]==undefined)continue
+				var obj = objectMap[x2][y2]
+				
+				//Damaging
 				var damage = calculateDamage()
-				damage[0] *= items[inventory[holding][0]].damageMult>>>bitCheck[map[x2][y2][0]-1]&1
-				if (items[inventory[holding][0]].toolStrength >= toolStrengthReq[objectMap[x2][y2][0]]&&objectMap[x2][y2][0]) {
-                                        damage[0] = Math.round(damage[0]*1.1**(items[inventory[holding][0]].toolStrength-toolStrengthReq[objectMap[x2][y2][0]]))                                
-					objectMap[x2][y2][1] -= damage[0]
-				} else {
-					damage[0] = 0
-				}
-				screenShakeAmp = 10
+
+				//Tool strength difference
+                                var toolStrengthDiff = items[inventory[holding][0]].toolStrength-toolStrengthReq[obj[0]]
+				if (toolStrengthDiff>=0&&obj[0]) {
+					
+					//Tool strength buff
+                                        damage[0] *= 1.1**toolStrengthDiff                             
+					
+					//Tool type buff
+					damage[0] *= items[inventory[holding][0]].damageMult>>>bitCheck[obj[0]-1]&1
+					damage[0] = Math.round(damage[0])
+
+					//Dealing damage
+					obj[1] -= damage[0]
+				} else {damage[0] = 0}
+
+				//Apply boosts
+				if (damage[1]&&Math.random()<0.05*player.powerups.berserk) player.berserkActive = 20*player.powerups.berserk 
 				player.stats.hp = Math.min(player.stats.mhp,player.stats.hp+damage[0]*lifesteal)
                                 player.exp += damage[0]*xpMult
-				objectMap[x2][y2][4] = 4
-				var rot = Math.atan2(x,y)+Math.PI
-				if (damage[1]&&Math.random()<0.05*player.powerups.berserk) player.berserkActive = 20*player.powerups.berserk     
-				switch (objectMap[x2][y2][0]) {
-					case 1: 
-					        createParticles(0.45+x2,0.45+y2,0.55+x2,0.55+y2,[1,2],[0.005,10],rot-0.7,rot+0.7,0.1,0.141,[92,66,8,255],"rgb",0.1,0.13,6,11,23,26,0.86,0.89)
-						createParticles(x2,0.1+y2,1+x2,0.45+y2,[1,2],[0.005,2],-1,1,0.03,0.05,[106,190,48,255],"rgb",0.1,0.13,6,8,100,140,0.94,0.96)
-					break;//tree
-					case 2: //rocc
-					case 17: //stone wall
-					case 18: //stone gate
-					case 21: //furnace
-						createParticles(0.45+x2,0.45+y2,0.55+x2,0.55+y2,[1,2],[0.005,10],rot-0.7,rot+0.7,0.1,0.141,[100,100,108,255],"rgb",0.1,0.13,6,11,23,26,0.86,0.89)
-					break;
-					case 3:
-						createParticles(0.45+x2,0.45+y2,0.55+x2,0.55+y2,[1,2],[0.005,10],rot-0.7,rot+0.7,0.1,0.141,[100,100,108,255],"rgb",0.1,0.13,4,6,23,26,0.86,0.89)
-						createParticles(0.45+x2,0.45+y2,0.55+x2,0.55+y2,[1,2],[0.005,10],rot-0.7,rot+0.7,0.1,0.141,[185,122,87,255],"rgb",0.1,0.13,2,4,23,26,0.86,0.89)
-					break;//copper ore
-					case 4:
-						createParticles(0.45+x2,0.45+y2,0.55+x2,0.55+y2,[1,2],[0.005,10],rot-0.7,rot+0.7,0.1,0.141,[100,100,108,255],"rgb",0.1,0.13,4,6,23,26,0.86,0.89)
-						createParticles(0.45+x2,0.45+y2,0.55+x2,0.55+y2,[1,2],[0.005,10],rot-0.7,rot+0.7,0.1,0.141,[160,129,112,255],"rgb",0.1,0.13,2,4,23,26,0.86,0.89)
-					break;//iron ore
-					case 5: 
-					        createParticles(0.45+x2,0.45+y2,0.55+x2,0.55+y2,[1,2],[0.005,10],rot-0.7,rot+0.7,0.1,0.141,[150,151,130,255],"rgb",0.1,0.13,6,11,23,26,0.86,0.89)
-						createParticles(x2,0.1+y2,1+x2,0.45+y2,[1,2],[0.005,2],-1,1,0.03,0.05,[206,60,67,255],"rgb",0.1,0.13,6,8,100,140,0.94,0.96)
-					break;//maple tree
-					case 6:
-						createParticles(0.45+x2,0.45+y2,0.55+x2,0.55+y2,[1,2],[0.005,10],rot-0.7,rot+0.7,0.1,0.141,[100,100,108,255],"rgb",0.1,0.13,4,6,23,26,0.86,0.89)
-						createParticles(0.45+x2,0.45+y2,0.55+x2,0.55+y2,[1,2],[0.005,10],rot-0.7,rot+0.7,0.1,0.141,[153,217,234,255],"rgb",0.1,0.13,2,4,23,26,0.86,0.89)
-					break;//platinum ore
-					case 7: //mithirkl
-					case 32: //wall
-					case 33: //gate
-					        createParticles(0.45+x2,0.45+y2,0.55+x2,0.55+y2,[1,2],[0.005,10],rot-0.7,rot+0.7,0.1,0.141,[121,154,187,255],"rgb",0.1,0.13,6,11,23,26,0.86,0.89)
-						createParticles(0.45+x2,0.45+y2,0.55+x2,0.55+y2,[1,2],[0.005,10],-0.4,0.4,0.1,0.141,[121,154,187,255],"rgb",0.1,0.13,2,3,23,26,0.86,0.89)
-					break;
-					case 8: 
-					        createParticles(0.45+x2,0.45+y2,0.55+x2,0.55+y2,[1,2],[0.005,10],rot-0.7,rot+0.7,0.1,0.141,[214,214,214,255],"rgb",0.1,0.13,6,11,23,26,0.86,0.89)
-						createParticles(x2,0.1+y2,1+x2,0.45+y2,[1,2],[0.005,2],-1,1,0.03,0.05,[219,213,100,255],"rgb",0.1,0.13,6,8,100,140,0.94,0.96)
-					break;//bich tree
-					case 9:
-						createParticles(0.45+x2,0.45+y2,0.55+x2,0.55+y2,[1,2],[0.005,10],rot-0.7,rot+0.7,0.1,0.141,[100,100,108,255],"rgb",0.1,0.13,4,6,23,26,0.86,0.89)
-						createParticles(0.45+x2,0.45+y2,0.55+x2,0.55+y2,[1,2],[0.005,10],rot-0.7,rot+0.7,0.1,0.141,[121,187,138,255],"rgb",0.1,0.13,2,4,23,26,0.86,0.89)
-					break;//adam ore
-					case 10:
-						createParticles(0.45+x2,0.45+y2,0.55+x2,0.55+y2,[1,2],[0.005,10],rot-0.7,rot+0.7,0.1,0.141,[100,100,108,255],"rgb",0.1,0.13,4,6,23,26,0.86,0.89)
-						createParticles(0.45+x2,0.45+y2,0.55+x2,0.55+y2,[1,2],[0.005,10],rot-0.7,rot+0.7,0.1,0.141,[224,224,224,255],"rgb",0.1,0.13,2,4,23,26,0.86,0.89)
-					break;//titan ore
-					case 11: 
-					        createParticles(0.45+x2,0.45+y2,0.55+x2,0.55+y2,[1,2],[0.005,10],rot-0.7,rot+0.7,0.1,0.141,[61,40,31,255],"rgb",0.1,0.13,6,11,23,26,0.86,0.89)
-						createParticles(x2,0.1+y2,1+x2,0.45+y2,[1,2],[0.005,2],-1,1,0.03,0.05,[34,117,76,255],"rgb",0.1,0.13,6,8,100,140,0.94,0.96)
-					break;//pi tree
-					case 12:
-					case 42:
-					case 43: 
-					        createParticles(0.45+x2,0.45+y2,0.55+x2,0.55+y2,[1,2],[0.005,10],rot-0.7,rot+0.7,0.1,0.141,[14,71,31,255],"rgb",0.1,0.13,6,11,23,26,0.86,0.89)
-					break;//unob
-					case 13: //crystal 
-					case 44: //crystal wall
-					case 45: //crystal gate
-					        createParticles(0.45+x2,0.45+y2,0.55+x2,0.55+y2,[1,2],[0.005,10],rot-0.7,rot+0.7,0.1,0.141,[92,117,195,255],"rgb",0.1,0.13,6,11,23,26,0.86,0.89)
-						createParticles(0.45+x2,0.45+y2,0.55+x2,0.55+y2,[1,2],[0.005,10],rot-0.7,rot+0.7,0.1,0.141,[91,91,196,255],"rgb",0.1,0.13,6,11,23,26,0.86,0.89)
-						createParticles(0.45+x2,0.45+y2,0.55+x2,0.55+y2,[1,2],[0.005,10],rot-0.7,rot+0.7,0.1,0.141,[118,91,196,255],"rgb",0.1,0.13,6,11,23,26,0.86,0.89)
-						createParticles(0.45+x2,0.45+y2,0.55+x2,0.55+y2,[1,2],[0.005,10],rot-0.7,rot+0.7,0.1,0.141,[143,91,196,255],"rgb",0.1,0.13,6,11,23,26,0.86,0.89)
-						createParticles(0.45+x2,0.45+y2,0.55+x2,0.55+y2,[1,2],[0.005,10],rot-0.7,rot+0.7,0.1,0.141,[170,91,196,255],"rgb",0.1,0.13,6,11,23,26,0.86,0.89)
-					case 14: //wood wall
-					case 15: //wood gate
-					case 16: //workbench
-					case 29: //torch
-						createParticles(0.45+x2,0.45+y2,0.55+x2,0.55+y2,[1,2],[0.005,10],rot-0.7,rot+0.7,0.1,0.141,[92,66,8,255],"rgb",0.1,0.13,6,11,23,26,0.86,0.89)
-					break;
-					case 19: //copper wall
-					case 20: //copper gate
-						createParticles(0.45+x2,0.45+y2,0.55+x2,0.55+y2,[1,2],[0.005,10],rot-0.7,rot+0.7,0.1,0.141,[185,122,87,255],"rgb",0.1,0.13,6,11,23,26,0.86,0.89)
-					break;
-					case 22: //anvil
-					case 23: //iron wall
-					case 24: //iron gate
-						createParticles(0.45+x2,0.45+y2,0.55+x2,0.55+y2,[1,2],[0.005,10],rot-0.7,rot+0.7,0.1,0.141,[146,136,133,255],"rgb",0.1,0.13,6,11,23,26,0.86,0.89)
-					break;
-					case 25: //wood chest
-                                                createParticles(0.45+x2,0.45+y2,0.55+x2,0.55+y2,[1,2],[0.005,10],rot-0.7,rot+0.7,0.1,0.141,[92,66,8,255],"rgb",0.1,0.13,6,11,23,26,0.86,0.89)
-						createParticles(0.45+x2,0.45+y2,0.55+x2,0.55+y2,[1,2],[0.005,10],rot-0.7,rot+0.7,0.1,0.141,[100,100,108,255],"rgb",0.1,0.13,6,11,23,26,0.86,0.89)
-					break;
-					case 26: //steel chest
-					        createParticles(0.45+x2,0.45+y2,0.55+x2,0.55+y2,[1,2],[0.005,10],rot-0.7,rot+0.7,0.1,0.141,[146,136,133,255],"rgb",0.1,0.13,6,11,23,26,0.86,0.89)
-						createParticles(0.45+x2,0.45+y2,0.55+x2,0.55+y2,[1,2],[0.005,10],rot-0.7,rot+0.7,0.1,0.141,[213,207,206,255],"rgb",0.1,0.13,6,11,23,26,0.86,0.89)
-					break;
-					case 27: //steel wall
-					case 28: //steel gate
-					        createParticles(0.45+x2,0.45+y2,0.55+x2,0.55+y2,[1,2],[0.005,10],rot-0.7,rot+0.7,0.1,0.141,[213,207,206,255],"rgb",0.1,0.13,6,11,23,26,0.86,0.89)
-					break;
-					case 30: // platinum buildings
-					case 31:
-						createParticles(0.45+x2,0.45+y2,0.55+x2,0.55+y2,[1,2],[0.005,10],rot-0.7,rot+0.7,0.1,0.141,[153,217,234,255],"rgb",0.1,0.13,6,11,23,26,0.86,0.89)
-					break;
-					case 34: //adam buildings
-					case 35:
-						createParticles(0.45+x2,0.45+y2,0.55+x2,0.55+y2,[1,2],[0.005,10],rot-0.7,rot+0.7,0.1,0.141,[121,187,138,255],"rgb",0.1,0.13,6,11,23,26,0.86,0.89)
-					break;
-					case 36://maple buildings
-					case 37: 
-					        createParticles(0.45+x2,0.45+y2,0.55+x2,0.55+y2,[1,2],[0.005,10],rot-0.7,rot+0.7,0.1,0.141,[150,151,130,255],"rgb",0.1,0.13,6,11,23,26,0.86,0.89)
-					break;
-					case 38://titn buildings
-					case 39: 
-					        createParticles(0.45+x2,0.45+y2,0.55+x2,0.55+y2,[1,2],[0.005,10],rot-0.7,rot+0.7,0.1,0.141,[224,224,224,255],"rgb",0.1,0.13,6,11,23,26,0.86,0.89)
-					break;
-					case 40: //bich buildings
-					case 41: 
-					        createParticles(0.45+x2,0.45+y2,0.55+x2,0.55+y2,[1,2],[0.005,10],rot-0.7,rot+0.7,0.1,0.141,[214,214,214,255],"rgb",0.1,0.13,6,11,23,26,0.86,0.89)
-					break;
+				
+				//Apply effects
+				screenShakeAmp = 10
+				obj[4] = 4
+				
+				//Particles
+			        for (let pr in particlesTo[obj[0]-1]) {
+					var pTS = (particlesTo[obj[0]-1]||[[]])[pr].slice(0)
+					if (pTS.length>0) {
+						pTS[0]+=x2;pTS[1]+=y2
+					        pTS[2]+=x2;pTS[3]+=y2
+					        createParticles(...pTS)
+					}
 				}
+				
+				//Texts
 				if (objectMap[x2][y2][0] > 0) {
 					switch (damage[1]) {
 						case 0:
@@ -656,17 +113,23 @@ function attack() {
 		}
 		x++
 	}
+
+	//Damaging enemies
 	for (x in enemies) {
-		var coll = circleCollision(player.pos[0]+0.5+51/60*Math.sin(rotation), player.pos[1]+0.5-51/60*Math.cos(rotation), player.stats.reach/60
-		,enemies[x].x+0.5,enemies[x].y+0.5,Math.SQRT1_2)
-		if (coll) {
-                        var particleRad = Math.atan2(player.pos[0]-enemies[x].x, player.pos[1]-enemies[x].y)+Math.PI
-			createParticles(0.45+enemies[x].x,0.45+enemies[x].y,0.55+enemies[x].x,0.55+enemies[x].y,[1,2],[0.005,10],-0.7+particleRad,0.7+particleRad,0.06,0.1,[255,0,0,255],"rgb",0.1,0.13,3,5,40,50,0.97,0.98)
-			createParticles(0.45+enemies[x].x,0.45+enemies[x].y,0.55+enemies[x].x,0.55+enemies[x].y,[1,2],[0.005,10],-0.7+particleRad,0.7+particleRad,0.06,0.1,[200,0,0,255],"rgb",0.1,0.13,3,5,40,50,0.97,0.98)
-		        var damage = calculateDamage()
+		if (circleCollision(attackX, attackY, player.stats.reach/60,enemies[x].x+0.5,enemies[x].y+0.5,Math.SQRT1_2)) {
+                        
+			//Blood effect                     
+			var bl = [[enemies[x].x+.5,enemies[x].y+.5,enemies[x].x+.5,enemies[x].y+.5,[1,3],[0.0005,-0.001],2.1415,4.1415,0.03,0.07,[255,0  ,0  ,255],"rgb",0.07,0.09,11,17,222,222,0.99,1],[enemies[x].x+.5,enemies[x].y+.5,enemies[x].x+.5,enemies[x].y+.5,[1,3],[0.0005,-0.001],2.1415,4.1415,0.03,0.07,[200  ,0  ,255],"rgb",0.07,0.09,11,17,222,222,0.99,1]]
+			bl.forEach(a => createParticles(...a))
+		        
+			//Damaging       
+			var damage = calculateDamage()
 			damage[0] *= items[inventory[holding][0]].damageMult>>>0&1
 			player.stats.hp = Math.min(player.stats.mhp,player.stats.hp+damage[0]*lifesteal*2)
 			player.exp += 5*damage[0]*xpMult
+			enemies[x].hp -= damage[0]
+
+			//Spawning text
 			switch (damage[1]) {
 				case 0:
                                         texts.push({
@@ -701,390 +164,131 @@ function attack() {
 					        content: damage[0],
 				        })
 				break;
-			}		        
-		        enemies[x].hp -= damage[0]
+			}		        	      
 		}
 	}
 }
-function update() {
-	if(times<=maxTimes)return
-	if (player.stats.hp>0) {
-		player.berserkActive--
-		player.moveCooldown = player.moveCooldown.map(a => a+1)
-		var x=-40,c
-		var speed = 10*player.stats.movementSpeed
-		speed *= (keyPressed["shift"]&&player.stats.stamina>=0.25/player.stats.staminaCMult)?.6:1
-		if(player.moveCooldown[0]>=speed&&keyPressed["w"]){move([0,-1]);player.moveCooldown[0]%=speed}
-		if(player.moveCooldown[1]>=speed&&keyPressed["a"]){move([-1,0]);player.moveCooldown[1]%=speed}
-		if(player.moveCooldown[2]>=speed&&keyPressed["s"]){move([0, 1]);player.moveCooldown[2]%=speed}
-		if(player.moveCooldown[3]>=speed&&keyPressed["d"]){move([1, 0]);player.moveCooldown[3]%=speed}
-	        while (x <= 40) {
-		        var y = -40
-		        while (y <= 40) {
-		        	var x2 = Math.min(Math.max(player.pos[0] + x, 0), map.length-1), y2 = Math.min(Math.max(player.pos[1] + y, 0), map[0].length-1)                          
-				if (objectMap[x2][y2][1] <= 0&&objectMap[x2][y2][0]) {
-                                        spawnItems(lootTables[objectMap[x2][y2][0]], 1, x2+0.5, y2+0.5)
-					switch (objectMap[x2][y2][0]) {
-                                                case 25: //normal chest
-						        var a
-						        for (a in objectMap[x2][y2][3].storage) {
-							        var rad = Math.random()*Math.PI*2
-			                                        var speed = Math.random()*0.1
-								var loot = objectMap[x2][y2][3].storage[a]
-			                                        drops.push({
-				                                        id: loot[0],
-				                                        x: x+0.5,
-				                                        y: y+0.5,
-				                                        dx: Math.sin(rad)*speed,
-				                                        dy: Math.cos(rad)*speed,
-				                                        friction: 0.97,
-				                                        amount: 1,
-				                                        life: loot[1], 
-			                                        })
-						        }
-						break;
-					}
-                                        objectMap[x2][y2] = [0,0,0,{}]
-				}
-		        	y++
-		        }
-		        x++
-	        }
-		updateStats()
-		updateTime()
-		updateInventory()
-		updateClick()
-		if (click[0]) pickup("inventory")
-                if (keyPressed["shift"]) {
-			player.stats.stamina=Math.max(player.stats.stamina-0.25*player.stats.staminaCMult,0)
-		} else {
-			player.stats.stamina=Math.min(player.stats.stamina+0.25,100)
-		}
-		player.attackCooldown < 100 ? player.attackCooldown+=player.stats.attackSpeed*items[inventory[holding][0]].atkSpeed : 0
-		//console.log((!!mouseDown[0])&&(player.attackCooldown>=100)&&aa)
-		if (mouseDown[0]&&player.attackCooldown>=100&&screen=="") {
-			player.attackCooldown %= 100
-			attackDuration = 5	
-			attack()
-		}
-		levelUp()
-	        render()   
-	} else {
-		alert("yuo ded \n reload for new world")
+function build() {
+	//Stop if player mouse havent touched the screen yet
+        if (mousePos.x==undefined) return
+
+	//ID of object to build
+	var buildID = items[inventory[holding][0]].buildID
+
+	//Stop executing the code if there's nothing to build
+	if (!buildID) return
+
+        //Get the position on canvas to draw transparent version
+	var tile = [Math.floor(mousePos.x/60),Math.floor(mousePos.y/60)]
+	var x2 = tile[0]-7+player.pos[0]
+	var y2 = tile[1]-5+player.pos[1]
+	
+	//Draw it
+	var drawID = buildID-1
+	ctx.drawImage(sprite.object,drawID%5*60,Math.floor(drawID/5)*60,60,60,tile[0]*60,tile[1]*60,60,60)
+	
+	//Make it transparent
+	ctx.fillStyle = getColorFromHeight(map[x2][y2])+"1e"
+	ctx.fillRect(tile[0]*60,tile[1]*60,60,60)
+
+	//Draw red if cant build and green otherwise
+	ctx.fillStyle = (objectMap[x2][y2][0] == 0 &&map[x2][y2]>0.3)? "#0000" : "rgba(255,0,0,0.5)"
+	ctx.fillRect(tile[0]*60,tile[1]*60,60,60) //display transparent version of object
+	
+	//Placing action (when right click is held down)
+	if (mouseDown[2]) {
+                if (objectMap[x2][y2][0] == 0&&map[x2][y2]>0.3) {
+                        objectMap[x2][y2] = [buildID, objectHP[buildID], objectHP[buildID], {}, 0]
+			inventory[holding][1]--
+		} 
 	}
 }
-function spawnObject() {
-	spwn = [Math.round(Math.random()*(map.length-2)),Math.round(Math.random()*(map[0].length-2))]
-	var dist = Math.abs(player.pos[0]-spwn[0])+Math.abs(player.pos[1]-spwn[1])
-	var a = 0
-	var toSpawn = parseInt(weighted_random({
-		"1": 4,
-		"2": 3,
-		"3": 2,
-	}))
-	var hp = objectHP[toSpawn]
-	while ((dist<25||dist>250||objectMap[spwn[0]][spwn[1]][0]!=0||map[spwn[0]][spwn[1]]<0.3)&&a<100) {
-                spwn = [Math.round(Math.random()*(map.length-2)),Math.round(Math.random()*(map[0].length-2))]
-		dist = Math.abs(player.pos[0]-spwn[0])+Math.abs(player.pos[1]-spwn[1])
-		a++
+function calculateDamage() {
+
+	//Updating stats
+        updateStats()
+
+	//Calculate damage mult
+	var dmgMult = 1 , crit = 0
+
+        //Item holding (for base damage)
+	var i = items[inventory[holding][0]] 
+
+	//5-leaf clover effect
+	if (Math.random() < (player.powerups.clover2**0.6)/100) {
+		dmgMult *= Math.log(player.powerups.clover2)*15;crit=2
 	}
-	a<100 ? objectMap[spwn[0]][spwn[1]] = [toSpawn,hp,hp,{}] : 0
-}
-function render() {
-	ctx.clearRect(-900,-600,1800,1200)
-	var screenRad = Math.random()*Math.PI*2
-	screenShakeAmp *= 0.5
-	screenShake[0] = Math.round(Math.sin(screenRad)*screenShakeAmp)
-	screenShake[1] = Math.round(Math.cos(screenRad)*screenShakeAmp)
-	ctx.translate(screenShake[0],screenShake[1])
-	renderHeight()
-	renderObjects()
-	renderEnemies()
-	build()
-	for (p in drops) {
-		ctx.drawImage(sprite.items,drops[p].id%5*60, Math.floor(drops[p].id/5)*60, 60, 60, (drops[p].x-player.pos[0]+20/3)*60, (drops[p].y-player.pos[1]+14/3)*60, 40, 40)
-		drops[p].x += drops[p].dx
-		drops[p].y += drops[p].dy
-		drops[p].dx *= drops[p].friction; drops[p].dy *= drops[p].friction
-		drops[p].life--
-		var rarities = ["common","uncommon","rare", "epic", "legendary", "mythical"]
-		var pRC = {
-			"common": [230, 230, 230, 100],
-			"uncommon": [0, 127, 0, 100],
-			"rare": [0, 0, 166, 100],
-			"epic": [157, 30, 157, 100],
-			"legendary":[255,220,0, 100],
-			"mythical": [145, 0, 0, 100],
-		}
-		if (Math.random()<0.01*2**rarities.indexOf(items[drops[p].id].rarity)) {
-		        createParticles(drops[p].x, drops[p].y, drops[p].x, drops[p].y,
-		        [2,0], [5,0.0025], 0, Math.PI*2, 0.03, 0.05, pRC[items[drops[p].id].rarity], 
-		        "rgb", 0.003, 0.003, 1, 
-		        1.5**rarities.indexOf(items[drops[p].id].rarity), 
-		        20, 20, 0.98, 0.98)
-		}
-		if (Boolean(circleCollision(drops[p].x,drops[p].y,1/3*Math.SQRT2,player.pos[0]+0.5,player.pos[1]+0.5,Math.SQRT1_2))&&drops[p].life<=0) {
-			var j
-			for (j in inventory) {
-				if (inventory[j][0] == drops[p].id) {
-					inventory[j][1] += drops[p].amount
-					drops[p].x = -100
-					break;
-				}
-				else if (inventory[j][0] == 0) {
-					inventory[j][1] += drops[p].amount
-					inventory[j][0] = drops[p].id
-					drops[p].x = -100
-					break;
-				}
-                                if (j >= Math.min(34,player.stats.inventorySlots-1)) break;
-			}
-		}
-	} 
-	for (p in particles) {
-		var e = 0
-		while (e < particles[p].type.length) {
-                        switch (particles[p].type[e]) {
-		        	case 0: particles[p].radius  +=                                  particles[p].amp[e]   ;break;//grow
-		        	case 1: particles[p].radius   = Math.max(particles[p].radius   - particles[p].amp[e],0);break;//shrink
-				case 2: particles[p].color[3] = particles[p].color[3] - particles[p].amp[e];break;//fade
-		        }
-			e++
-	        }
-		ctx.beginPath()
-		ctx.fillStyle = particles[p].colorType+"a("+particles[p].color[0]+","+particles[p].color[1]+","+particles[p].color[2]+","+particles[p].color[3]/255+")"
-		ctx.arc((particles[p].x-player.pos[0]+7)*60,(particles[p].y-player.pos[1]+5)*60, particles[p].radius*60, 0, 7)
-		ctx.fill()
-		ctx.closePath()
-		particles[p].x += particles[p].dx; particles[p].y += particles[p].dy
-		particles[p].dx *= particles[p].friction; particles[p].dy *= particles[p].friction
-		particles[p].life--
+
+	//Critical hit
+	if(Math.random() < player.stats.critChance/100) {
+		dmgMult *= player.stats.critDamage/100+1;crit=1
 	}
-	for (p in texts) {
-		//var timeExisted = (255-texts[p].color[3])/texts[p].fadeSpeed
-		ctx.fillStyle = "rgba("+texts[p].color[0]+","+texts[p].color[1]+","+texts[p].color[2]+","+texts[p].color[3]/255+")"
-		texts[p].color[3] -= texts[p].fadeSpeed
-		texts[p].y -= texts[p].dy
-		texts[p].x += texts[p].dx
-		texts[p].dy -= 0.01
-		ctx.fillText(texts[p].content, (texts[p].x-player.pos[0]+7)*60, (texts[p].y-player.pos[1]+5)*60)
+
+	//Dumbbell
+	dmgMult *= player.powerups.dumbbell*0.04+1   
+
+	//Return damage
+        return [Math.round(randomRange(i.minDamage, i.maxDamage)*dmgMult),crit]
+}
+function craftItems(recipe, amnt) {
+        var slotToPlace = 0, a, b, c, d=true, amount = amnt || 1
+	//Amounts of items have (ID = index)
+	var amounts = Array(items.length).fill(0)
+
+	//Index of items have (ID = index)
+	var IndxOnInv = Array(items.length).fill(-1)
+
+	//Find recipe to craft 
+	//if it's a number then recipes[num] otherwise the recipe
+	var recipeToCraft = typeof recipe === "number" ? recipes[recipe] : recipe
+
+	//Loop thru inventory slots to find slots where you could place the item
+	while (slotToPlace < player.stats.inventorySlots) {
+		var b = inventory[slotToPlace][0]
+
+		//If inventory[b][0] is empty or the thing crafted then stop the loop
+                b == recipeToCraft[2][0] || b == 0 ? a = true : 0
+		if(a)break;
+
+		//Otherwise continue
+		slotToPlace++
 	}
-	var p,q //for loops
-	ctx.translate(450,330)
-	ctx.rotate(-Math.atan2(mousePos.x-450,mousePos.y-330)+Math.PI)
-	/*ctx.beginPath();var s = ((mousePos.x-450)**2+(mousePos.y-330)**2)**0.5;ctx.moveTo(x3+450,y3+330);ctx.lineTo(450+x3*2,330+y3*2);ctx.stroke();ctx.closePath() ;ctx.strokeStyle="#000000"*/
-	//ctx.beginPath();ctx.arc(-1,-31,player.stats.reach,0,7);ctx.strokeStyle="#ff0000";ctx.stroke();ctx.closePath()
-	ctx.drawImage(sprite.player,-30,-30)
-	//ctx.fillStyle = "#ff0"
-	//ctx.lineWidth = 2
-	///ctx.beginPath()
-	//ctx.arc(450,330,30,0,7)
-	//ctx.fill()
-	//ctx.stroke()
-	//ctx.closePath()
-	ctx.setTransform(1,0,0,1,0,0)
-	ctx.translate(screenShake[0],screenShake[1])
-	//ctx.beginPath()
-	//ctx.arc(450+51*Math.sin(-Math.atan2(mousePos.x-450,mousePos.y-330)+Math.PI),330-51*Math.cos(-Math.atan2(mousePos.x-450,mousePos.y-330)+Math.PI),player.stats.reach,0,7)
-	//ctx.stroke()
-	//ctx.closePath()
-	//filter off things
-	drops = drops.filter(a => a.x>-1&&a.amount>0)
-	particles = particles.filter(a=>a.life>0)
-	texts = texts.filter(a=>a.color[3]>0)
-	renderBrightness()
-	ctx.setTransform(1,0,0,1,0,0)
-	renderBars()
-	renderGUI()
-	renderPowerups()
-	renderScreen()
-	ctx.font = "19px Roboto"
-	ctx.textAlign = "center"
-	renderInventory()
-	renderCursor()
-}
-function renderMinimap() {
-	var a=0
-	var ctx3 = document.getElementById("canvas3").getContext("2d")
-	while (a<map.length) {
-		var b=0
-		while (b<map.length) {
-			var h = map[a][b]
-			        if      (h< .1 )ctx3.fillStyle="#003d4d"
-	                        else if (h< .2 )ctx3.fillStyle="#007a99"
-	                        else if (h< .3 )ctx3.fillStyle="#00ccff"
-	                        else if (h< .4 )ctx3.fillStyle="#dee600"
-	                        else if (h<.62 )ctx3.fillStyle="#009900"
-	                        else if (h<.71 )ctx3.fillStyle="#004d00"
-	                        else if (h<.75 )ctx3.fillStyle="#666666"
-	                        else            ctx3.fillStyle="#e6e6e6"
-	               // var pxl = document.getElementById("canvas2").getContext("2d").getImageData(Math.trunc(map[a][b]*1000),0,1,1).data
-	                //ctx3.fillStyle = "rgb("+pxl[0]+","+pxl[1]+","+pxl[2]+")"
-			ctx3.fillRect(b/2,a/2,1,1)
-			b+=2
-		}
-		a+=2
+
+	//Stop checking if you can craft if there's no slot to place
+	if(!a)return
+
+	//Set the amounts and index
+	for (c in inventory) {
+		if(c>34)break;
+                amounts[inventory[c][0]] += inventory[c][1]
+		IndxOnInv[inventory[c][0]] = c
 	}
-	ctx3.fillStyle = "#f00"
-	ctx3.beginPath()
-	ctx3.arc(Math.floor(player.pos[0]/2),Math.floor(player.pos[1]/2),4,0,7)
-	ctx3.fill()
-	ctx3.closePath()
-}
-//semi-stationary functions/variables
-var rarity_colors = {
-	"common":"rgba(230, 230, 230, 0.6)",
-	"uncommon": "rgba(0, 127, 0, 0.6)",
-	"rare": "rgba(0, 0, 166, 0.6)",
-	"epic": "rgba(157, 30, 157, 0.6)",
-	"legendary": "rgba(255,220,0,0.6)",
-	"mythical": "rgba(190, 0, 0, 0.6)",
-}
-var mouseDown = [0, 0, 0, 0, 0, 0, 0, 0, 0],mouseDownCount = 0;
-var map //height map
-var heatMap //heat map
-var canvas = document.getElementById("canvas")
-var ctx = canvas.getContext("2d") //rendering
-var avg = 5 //how many times times to avg-ing (5 meaning set to avg every 5 updates)
-var max=0,min=0,heatMax=0,heatMin=0 //kinda useless (dont delete)
-var width = 200,height = 200 //width and height of map
-var day = 0
-var brightnessMap
-var hr = 6
-var diff = 1
-var sprite = {
-	player: new Image(),
-	object: new Image(),
-	rick: new Image(), 
-	items: new Image(),
-	enemies: new Image(),
-	gui: new Image(),
-	powerups: new Image(),
-}
-ctx.textAlign = "center"
-ctx.textBaseline = "middle"
-sprite.player.src = "player.png"
-sprite.object.src = "object.png"
-sprite.rick.src = "rick.png"
-sprite.items.src = "items.png"
-sprite.enemies.src = "enemies.png"
-sprite.gui.src = "ui.png"
-sprite.powerups.src = "powerups.png"
-function spawnItems(lootTable, times, x, y) {
-	var loots = [],a,c=0
-	//loottable format: [id n, chance n] or [id n, min n, max n]
-	while (c++ < times) {
-	        for (a in lootTable) {
-		        switch (lootTable[a].length) {
-			        case 2:
-                                        if (Math.random()<lootTable[a][1]/100) {
-				        	loots.push( [lootTable[a][0], 1] )
-			        	}
-		        	break;
-		        	case 3:
-			        	loots.push( [lootTable[a][0], Math.round(randomRange(lootTable[a][1], lootTable[a][2]))] )
-		        	break;
-	        	}
-        	}
-        }
-	for (a in loots) {
-		var b = 0
-		while (b++ < loots[a][1]) {
-			var rad = Math.random()*Math.PI*2
-			var speed = Math.random()*0.1
-			drops.push({
-				id: loots[a][0],
-				x: x+0.5,
-				y: y+0.5,
-				dx: Math.sin(rad)*speed,
-				dy: Math.cos(rad)*speed,
-				friction: 0.97,
-				amount: 1,
-				life: 7, 
-			})
-		}
+	
+	//Check if you have enough materials
+	for (b in recipeToCraft[0]) {
+                d = d && (amounts[recipeToCraft[0][b][0]] >= recipeToCraft[0][b][1] * amount)
 	}
-}
-function press(e) {
-	var key = e.which || e.keyCode
-	var dir = [0,0]
-	switch (key) {
-		case 49 :             holding = 0; player.attackCooldown = 0;break; //1
-		case 50 :             holding = 1; player.attackCooldown = 0;break;
-		case 51 :             holding = 2; player.attackCooldown = 0;break;
-		case 52 :             holding = 3; player.attackCooldown = 0;break;
-		case 53 :             holding = 4; player.attackCooldown = 0;break; //to
-		case 54 :             holding = 5; player.attackCooldown = 0;break;
-		case 55 :             holding = 6; player.attackCooldown = 0;break;
-		case 56 :             holding = 7; player.attackCooldown = 0;break;
-		case 57 :             holding = 8; player.attackCooldown = 0;break; //9
-		case 69 : case 101: screen=="inventory"?screen="":screen="inventory";break; //e
-		case 82 : case 114: if (screen=="crafting") {
-			screen="";screenBonus[0]=0;screenBonus[1]=1
-		} else {
-			screen="crafting";screenBonus[0]=0;screenBonus[1]=1
-		} //r
-		break;
-		case 77: case 109: renderMinimap() ;break;
-		//case 45: screenBonus[2]=Math.max(0,screenBonus[2]-1);break;//-
-		//case 61: screenBonus[2]++;break;//+
-		//case 37: screenBonus[1]--;break;//left arrow
-		//case 39: screenBonus[1]++;break; //right arrow
-		case 27: screen="";screenBonus[0]=0;screenBonus[1]=0;break;
+	
+	//If not stop
+	if(!d)return
+	
+	//Remove the mats needed
+	for (b in recipeToCraft[0]) {
+                inventory[IndxOnInv[recipeToCraft[0][b][0]]][1] -= recipeToCraft[0][b][1] * amount
+		inventory[IndxOnInv[recipeToCraft[0][b][0]]][1] == 0 ? inventory[IndxOnInv[recipeToCraft[0][b][0]]][0] = 0 : 0
 	}
-	/*if (JSON.stringify(dir)!="[0,0]"&&player.stats.stamina>=5&&==0) {
-                if ( Math.random() < 1 - 
-	        Math.min(Math.abs( map[player.pos[0]][player.pos[1]] - map[player.pos[0]+dir[0]][player.pos[1]+dir[1]] ) 
-	        - player.stats.test, player.stats.test*2)/player.stats.test - Math.max( 0.3-map[player.pos[0]+dir[0]][player.pos[1]+dir[1]], 0 )*1.3
-	        ) {
-		        player.pos[0] += dir[0]
-		        player.pos[1] += dir[1]
-	        }
-		player.stats.stamina-=5
-	} //very fun to read i know */
-}
-function move(dir) {
-	var x2 = player.pos[0]+dir[0]
-	var y2 = player.pos[1]+dir[1]
-	if(map[x2]==undefined||map[0][y2]==undefined)return
-        if (JSON.stringify(dir)!="[0,0]") {
-		switch (objectMap[x2][y2][0]) {
-			case 0:
-			case 15:
-			case 18:
-			case 20:
-			case 24:
-			case 28:
-			case 29:
-			case 31:
-			case 33:
-			case 35:
-			case 37:
-			case 39:
-			case 41:
-			case 43:
-			case 45:
-		                player.pos[0] += dir[0]
-		                player.pos[1] += dir[1]
-			break;
-			case 16:
-			case 21:
-			case 22:
-				screen = "crafting"
-				screenBonus[0] = objectMap[x2][y2][0]
-			break;
-			case 25: //chest
-			case 26:
-			        screen = "storage"
-				screenBonus[0] = x2
-				screenBonus[1] = y2
-			break;
-		}
-	}
+
+	//Add the items crafted
+	inventory[slotToPlace][0] = recipeToCraft[2][0]
+	inventory[slotToPlace][1] += recipeToCraft[2][1] * amount
 }
 function createParticles(minX, minY, maxX, maxY, type, amp, minRad, maxRad, minSpeed, maxSpeed, color, colorType, radiusMin, radiusMax, minAmount, maxAmount, minLife, maxLife, frictionMin, frictionMax) {
+	
+	//Amounts of particles to spawn
 	var i = Math.round(randomRange(minAmount, maxAmount))
-	while (i-->0) {
+
+	//Spawn the particles
+	while (i--) {
 		var rad = randomRange(minRad,maxRad)
 		var speed = randomRange(minSpeed,maxSpeed)
 	        particles.push(JSON.parse(JSON.stringify({
@@ -1102,47 +306,98 @@ function createParticles(minX, minY, maxX, maxY, type, amp, minRad, maxRad, minS
 	        })))
         }
 }
-function craftItems(recipe, amnt) {
-        var slotToPlace = 0, a, b, c, d=true, amount = amnt || 1
-	var amounts = Array(items.length).fill(0)
-	var IndxOnInv = Array(items.length).fill(-1)
-	var recipeToCraft = typeof recipe === "number" ? recipes[recipe] : recipe
-	while (slotToPlace < player.stats.inventorySlots) {
-		var b = inventory[slotToPlace][0]
-                b == recipeToCraft[2][0] || b == 0 ? a = true : 0
-		if(a)break;
-		slotToPlace++
+function getColorFromHeight(h) {
+        if      (h< .1 )return "#003d4d"
+	else if (h< .2 )return "#007a99"
+	else if (h< .3 )return "#00ccff"
+	else if (h< .4 )return "#dee600"
+	else if (h<.62 )return "#009900"
+	else if (h<.71 )return "#996633"
+	else if (h<.75 )return "#666666"
+	else            return "#e6e6e6"
+}
+function levelUp() {
+	//while exp >= requirement
+	while (player.exp>=(player.level+1)*200) {
+
+		//Update level/exp
+                player.level++
+		player.exp-=player.level*200
+
+		//Increase a random powerup
+		var a = Object.keys(player.powerups)
+		var b = a.length*Math.random()<<0
+		while (a[b]=="berserkActive"||a[b]=="rubyPower") {
+			b = a.length*Math.random()<<0
+		}
+		player.powerups[a[b]]++
 	}
-	if(!a)return
-	for (c in inventory) {
-		if(c>34)break;
-                amounts[inventory[c][0]] += inventory[c][1]
-		IndxOnInv[inventory[c][0]] = c
+}
+function move(dir) {
+	//Position to move to
+	var x2 = player.pos[0]+dir[0]
+	var y2 = player.pos[1]+dir[1]
+
+	//If you move out of bounds, stop
+	if(map[x2]==undefined||map[0][y2]==undefined)return
+
+	//Depends on destination, do things
+	switch (objectMap[x2][y2][0]) {
+		case 0:
+		case 11:
+		case 14:
+		case 18:
+		case 22:
+		case 25:
+		case 27:
+		case 29:
+		case 31:
+		case 33:
+
+		        //Move
+		        player.pos[0] += dir[0]
+		        player.pos[1] += dir[1]
+		break;
+		case 12:
+		case 15:
+		case 16:
+
+		        //Crafting
+			screen = "crafting"
+			screenBonus[0] = objectMap[x2][y2][0]
+		break;
+		case 19:
+		case 20:
+
+			//Chest
+			screen = "storage"
+			screenBonus[0] = x2
+			screenBonus[1] = y2
+		break;
 	}
-	for (b in recipeToCraft[0]) {
-                d = d && (amounts[recipeToCraft[0][b][0]] >= recipeToCraft[0][b][1] * amount)
-	}
-	if(!d)return
-	for (b in recipeToCraft[0]) {
-                inventory[IndxOnInv[recipeToCraft[0][b][0]]][1] -= recipeToCraft[0][b][1] * amount
-		inventory[IndxOnInv[recipeToCraft[0][b][0]]][1] == 0 ? inventory[IndxOnInv[recipeToCraft[0][b][0]]][0] = 0 : 0
-	}
-	inventory[slotToPlace][0] = recipeToCraft[2][0]
-	inventory[slotToPlace][1] += recipeToCraft[2][1] * amount
 }
 function pickup(type) {
-	var touched = -2 
+	var touched = -2
+	
+	//Each screen has a different GUI
 	switch (type) {
 		case "inventory":
+		case "":
+
+		        //Hotbar
 			if (mousePos.y>=530&&mousePos.x<500&&mousePos.y<=590) {
                                 if (mousePos.x%70-9>0) {
 			                touched = Math.floor(mousePos.x/70)
 		                }
 	                }
-		        if (mousePos.y>=95&&mousePos.x>=65&&(mousePos.y%70<15||mousePos.y%70>24)&&(mousePos.x+5)%70<60&&mousePos.x<=575&&mousePos.y<=444&&screen=="inventory") {
+		        
+			//Inventory
+			if (mousePos.y>=95&&mousePos.x>=65&&(mousePos.y%70<15||mousePos.y%70>24)&&(mousePos.x+5)%70<60&&mousePos.x<=575&&mousePos.y<=444&&screen=="inventory") {
                                 touched = Math.floor((mousePos.x-65)/70)+(4-Math.floor((mousePos.y-95)/70))*7
 	                }
-	                if((touched==-2||touched>=player.stats.inventorySlots)||(mousePos.y<95||mousePos.x<65||mousePos.x>575||mousePos.y>444)) {
+	                
+			//Dropping when clicked on an undefined spot
+			if((touched==-2||touched>=player.stats.inventorySlots)||(mousePos.y<95||mousePos.x<65||mousePos.x>575||mousePos.y>444)) {
                                 var rad = Math.atan2(mousePos.x-450,mousePos.y-330)
 			        var speed = 0.18
 			        if(out[0]){drops.push({
@@ -1156,20 +411,30 @@ function pickup(type) {
 				        life: 19, 
 			        })}
 				out = [0,0]
-			} else if (touched!==-2&&touched<player.stats.inventorySlots) {
+			} 
+			
+			//Otherwise "transfer"
+			else if (touched!==-2&&touched<player.stats.inventorySlots) {
                                 var tempOut = inventory[touched].slice()
 	                        inventory[touched] = out.slice()
 	                        out = tempOut.slice() 
 			}                       
 		break;
 		case "crafting":
+			//Position
                         if (mousePos.x>=100&&mousePos.x<=790&&mousePos.y>=95&&mousePos.y<=305) {
 		                if ((mousePos.x-40)%70<60&&(mousePos.y-35)%70<60) {
 			                touched = Math.floor((mousePos.x-100)/70) + Math.floor((mousePos.y-95)/70)*10
 		                }
-	                } else if (mousePos.x>=365&&mousePos.x<=405&&mousePos.y>=385&&mousePos.y<=425) {
+	                }
+			
+			//Left arrow button
+			else if (mousePos.x>=365&&mousePos.x<=405&&mousePos.y>=385&&mousePos.y<=425) {
 				touched = -3
-			} else if (mousePos.x>=495&&mousePos.x<=535&&mousePos.y>=385&&mousePos.y<=425) {
+			} 
+
+			//Right arrow button
+			else if (mousePos.x>=495&&mousePos.x<=535&&mousePos.y>=385&&mousePos.y<=425) {
 				touched = -4
 			}
 	                return touched
@@ -1184,435 +449,421 @@ function pickup(type) {
 		break;
 	}
 }
-function updateTime() {
-        hr += 0.002
-	hr = hr.toFixed(4)
-	if(!(hr*1000%500)&&hr<6)spawnEnemies()
-	hr %= 24
-	if (hr==0) day++
-	diff = (1.05+.05*diffMult)**day
-}
-function updateInventory() {
-	amounts=Array(items.length).fill(0),IndxOnInv=Array(items.length).fill(-1)
-        for (c in inventory) {
-	        if(c>34)break;
-		if (inventory[c][1]>0) {
-                        amounts[inventory[c][0]] += inventory[c][1]
-		        IndxOnInv[inventory[c][0]] = c
-		        unlocked[inventory[c][0]] = true
-		} 
+function press(e) {
+	//Key pressed
+	var key = e.which || e.keyCode
+
+	//Do actions based on key pressed
+	switch (key) {
+		//Inventory hotkeys
+		case 49 :             holding = 0; player.attackCooldown = 0;break;
+		case 50 :             holding = 1; player.attackCooldown = 0;break;
+		case 51 :             holding = 2; player.attackCooldown = 0;break;
+		case 52 :             holding = 3; player.attackCooldown = 0;break;
+		case 53 :             holding = 4; player.attackCooldown = 0;break;
+		case 54 :             holding = 5; player.attackCooldown = 0;break;
+		case 55 :             holding = 6; player.attackCooldown = 0;break;
+
+		//Inventory (E)
+		case 69 : case 101: screen=="inventory"?screen="":screen="inventory";break;
+		
+		//Crafting (R)
+		case 82 : case 114: if (screen=="crafting") {
+			screen="";screenBonus[0]=0;screenBonus[1]=1
+		} else {
+			screen="crafting";screenBonus[0]=0;screenBonus[1]=1
+		}
+		break;
+
+		//smol map (M)
+		case 77: case 109: renderMinimap() ;break;
+
+		//ESC
+		case 27: screen="";screenBonus[0]=0;screenBonus[1]=0;break;
 	}
-	var tempArmor = inventory[35]
-        inventory = Array(35).fill([0,0]).map(copy)
-	inventory.push(tempArmor.slice(0))
-	for (c in IndxOnInv) {
-                if (IndxOnInv[c]>-1) {
-			inventory[IndxOnInv[c]][0] = parseInt(c)
-			inventory[IndxOnInv[c]][1] = amounts[c]
-		}
-	 }
 }
-function updateClick() {
-	click[0] = click[1] != mouseDown[0] && mouseDown[0]==1
-	click[1] = mouseDown[0]
-}
-function renderHeight() {
-        var x=0
-        while (x<15) {
-                var y=0	
-	        while (y<10) {
-			var x2 = x+player.pos[0]-7
-			var y2 = y+player.pos[1]-5
-                        if (x2<map[0].length&&x2>-1&&y2<map.length&&y2>-1) {
-				//ctx.fillStyle="hsl("+ 
-				//(220-(220*map[x2][y2]))
-				//+",100%,"+15*(Math.cos(hr*Math.PI/12+Math.PI)+1.35)+"%)"
-				var h = map[x2][y2]
-				if      (h< .1 )ctx.fillStyle="#003d4d"
-	                        else if (h< .2 )ctx.fillStyle="#007a99"
-	                        else if (h< .3 )ctx.fillStyle="#00ccff"
-	                        else if (h< .4 )ctx.fillStyle="#dee600"
-	                        else if (h<.62 )ctx.fillStyle="#009900"
-	                        else if (h<.71 )ctx.fillStyle="#004d00"
-	                        else if (h<.75 )ctx.fillStyle="#666666"
-	                        else            ctx.fillStyle="#e6e6e6"
-				//var pxl = document.getElementById("canvas2").getContext("2d").getImageData(Math.trunc(map[x2][y2]*1000),0,1,1).data
-				//ctx.fillStyle = "rgb("+pxl[0]+","+pxl[1]+","+pxl[2]+")"
-				ctx.fillRect( x * 60 , y * 60  , 60 , 60)                             
-			} else {
-				ctx.fillStyle="black"
-				ctx.fillRect( x * 60 , y * 60 , 60 , 60)  
-			}                       
-                        
-			y++
-		}
-	        x++
-        }
-}
-function renderObjects() {
-	var x=0
-	while (x<15) {
-                var y=0
-	        while (y<10) {
-			var x2 = x+player.pos[0]-7
-			var y2 = y+player.pos[1]-5
-                        if (x2<map[0].length&&x2>-1&&y2<map.length&&y2>-1) {
-				if (objectMap[x2][y2][0]==25&&objectMap[x2][y2][3].storage==undefined) {
-					objectMap[x2][y2][3].storage = JSON.parse(JSON.stringify(Array(7).fill([0,0])))
-				} else if (objectMap[x2][y2][0]==26&&objectMap[x2][y2][3].storage==undefined) {
-					objectMap[x2][y2][3].storage = JSON.parse(JSON.stringify(Array(14).fill([0,0])))
-				}
-				if (objectMap[x2][y2][0]==29) {
-					createParticles(0.35+x2,0.2 +y2,0.65+x2,0.4 +y2,[1,2],[0.0015,5],2.6415,3.6415,0.03,0.055,[255,40,40,255] ,"rgb",0.08,0.1 ,2,3,50,52,0.96,0.98)
-				        createParticles(0.45+x2,0.35+y2,0.55+x2,0.55+y2,[1,2],[0.0015,5],2.6415,3.6415,0.03,0.055,[255,120,40,255],"rgb",0.07,0.09,1,2,50,52,0.96,0.98)
-					createParticles(0.45+x2,0.35+y2,0.55+x2,0.55+y2,[1,2],[0.0015,5],2.6415,3.6415,0.03,0.055,[255,190,40,255],"rgb",0.05,0.07,1,2,50,52,0.96,0.98)
-				}
-				var size = loglerp(20,60,objectMap[x2][y2][4]/10)
-				if (objectMap[x2][y2][0] > 0) {
-                                        ctx.drawImage(sprite.object, (objectMap[x2][y2][0]-1)%5*60,Math.floor((objectMap[x2][y2][0]-1)/5)*60,60,60,x*60+(60-size)/2,y*60+(60-size)/2,size,size)
-				        objectMap[x2][y2][4]++
-				}
-				if (objectMap[x2][y2][0] > 0 && Math.abs(x-7)+Math.abs(y-5)<=5) {
-                                        ctx.fillStyle = "#f00"; ctx.fillRect(x*60, y*60-10, 60, 4)
-					ctx.fillStyle = "#0f0"; ctx.fillRect(x*60, y*60-10, 60*Math.max(0, objectMap[x2][y2][1]/objectMap[x2][y2][2]), 4)
-				}                      
-			}
-			y++
-		}
-	        x++
-        }
-}
-function renderEnemies() {
-        var a       
-	for (a in enemies) {
-		enemies[a].tick()
-		ctx.translate((enemies[a].x-player.pos[0]+7)*60+30+screenShake[0],(enemies[a].y-player.pos[1]+5)*60+30+screenShake[1])
-		ctx.rotate(enemies[a].rotation)
-		ctx.drawImage(sprite.enemies, enemies[a].id%5*60, Math.floor(enemies[a].id)/5*60, 60, 60, 
-		-30,-30,60,60)
+function render() {
+	//Clear the canvas
+	ctx.clearRect(-900,-600,1800,1200)
+
+	//Apply screenshake
+	var screenRad = Math.random()*Math.PI*2
+	screenShakeAmp *= 0.5
+	screenShake[0] = Math.round(Math.sin(screenRad)*screenShakeAmp)
+	screenShake[1] = Math.round(Math.cos(screenRad)*screenShakeAmp)
+	ctx.translate(screenShake[0],screenShake[1])
+
+	//Smooth movement
+	//ctx.translate(-player.fractionalPos[0]*60,-player.fractionalPos[1]*60)
+	var p
+
+	//Render map
+	renderHeight()
+
+	//Render projectiles
+        p=-1;while (++p<projs.length) {
+		projs[p].tick()
+                
+
+		//Render the projectile
+		ctx.translate((projs[p].x-player.pos[0])*60+420,(projs[p].y-player.pos[1])*60+300)
+		ctx.rotate(projs[p].rotation-Math.PI/4)
+		ctx.drawImage(sprite.proj, 0, 0, 30, 30, -15, -15, 30, 30)
+
+		//Reset transform
 		ctx.setTransform(1,0,0,1,0,0)
 		ctx.translate(screenShake[0],screenShake[1])
-		if(enemies[a].hp<=0)player.powerups.rubyPower += player.powerups.ruby
-	        ctx.fillStyle = "#f00";ctx.fillRect((enemies[a].x-player.pos[0]+7)*60,(enemies[a].y-player.pos[1]+5)*60+10,60,5)
-	        ctx.fillStyle = "#0f0";ctx.fillRect((enemies[a].x-player.pos[0]+7)*60,(enemies[a].y-player.pos[1]+5)*60+10,Math.max(0,enemies[a].hp/enemies[a].mhp*60),5)
-		ctx.fillStyle = "#aaa";ctx.fillRect((enemies[a].x-player.pos[0]+7)*60,(enemies[a].y-player.pos[1]+5)*60-5,60,5)
-		ctx.fillStyle = "#ff0";ctx.fillRect((enemies[a].x-player.pos[0]+7)*60,(enemies[a].y-player.pos[1]+5)*60-5,Math.max(0,enemies[a].cooldown/enemies[a].attackInterval*60),5)
+	        //ctx.translate(-player.fractionalPos[0]*60,-player.fractionalPos[1]*60)
 	}
-	enemies = enemies.filter(a => a.hp>0)
-}
-function renderBrightness() {
-        updateBrightness()
-	var x=0
-        while (x<15) {
-                var y=0	
-	        while (y<10) {
-			var x2 = x+player.pos[0]-7
-			var y2 = y+player.pos[1]-5
-                        if (x2<map[0].length&&x2>-1&&y2<map.length&&y2>-1) {
-				//ctx.fillStyle="hsl("+ 
-				//(220-(220*map[x2][y2]))
-				//+",100%,"+15*(Math.cos(hr*Math.PI/12+Math.PI)+1.35)+"%)"
-				//var pxl = document.getElementById("canvas2").getContext("2d").getImageData(Math.trunc(map[x2][y2]*1000),0,1,1).data
-				//ctx.fillStyle = "rgb("+pxl[0]+","+pxl[1]+","+pxl[2]+")"
-				ctx.fillStyle = "rgba(0,0,0,"+Math.max(Math.min(1-brightnessMap[x2][y2],1),0)+")"
-				ctx.fillRect( x * 60 , y * 60  , 60 , 60)                             
-			}                       
-                        
-			y++
+	
+	//Render drops
+	p=-1;while (++p<drops.length) {
+
+		//Render the drops itself
+		ctx.drawImage(sprite.items,drops[p].id%5*60, Math.floor(drops[p].id/5)*60, 60, 60, (drops[p].x-player.pos[0]+20/3)*60, (drops[p].y-player.pos[1]+14/3)*60, 40, 40)
+		
+		//Update the drop
+		drops[p].x += drops[p].dx
+		drops[p].y += drops[p].dy
+		drops[p].dx *= drops[p].friction; drops[p].dy *= drops[p].friction
+		drops[p].life--
+		
+		//Create rarity particles (emits particles based on rarity)
+		var rarities = ["common","uncommon","rare", "epic", "mythical"]
+		var pRC = {
+			"common": [230, 230, 230, 100],
+			"uncommon": [0, 127, 0, 100],
+			"rare": [0, 0, 166, 100],
+			"epic": [157, 30, 157, 100],
+			"mythical": [145, 0, 0, 100],
 		}
-	        x++
-        }
-}
-function updateBrightness() {
-	var x=-40
-	while (x<=40) {
-                var y=-40
-	        while (y<=40) {
-			var x1 = x+player.pos[0]
-			var y1 = y+player.pos[1]
-			if (x1<map.length&&x1>-1&&y1<map.length&&y1>-1) {
-			        brightnessMap[x1][y1] = (Math.cos(hr*Math.PI/12+Math.PI)+1.1)/2.1   
-			     
-		        }
-		        y++
-	        }
-		x++
-	}
-	var x=-40
-	while (x<=40) {
-                var y=-40
-	        while (y<=40) {
-			var x1 = x+player.pos[0]
-			var y1 = y+player.pos[1]
-			if (x1<map.length&&x1>-1&&y1<map.length&&y1>-1) {
-                                if (objectMap[x1][y1][0]==29||objectMap[x1][y1][0]==21) {
-		                        var x2 = -20
-		                        while (x2<=20) {
-			                        var y2 = -20
-                                                while (y2<=20) {
-				                        var x3 = x1+x2
-				                        var y3 = y1+y2
-				                        if (x3<map.length&&x3>-1&&y3<map.length&&y3>-1) {
-					                        brightnessMap[x3][y3] += Math.min((Math.random()*0.05+0.95)/(x2**2+y2**2)*2,0.4)
-				                        }
-				                        y2++
-			                        }
-			                        x2++
-	                         	} 
-	                        } else if (objectMap[x1][y1][0]==12||objectMap[x1][y1][0]==32||objectMap[x1][y1][0]==31) {
-					var x2 = -20
-		                        while (x2<=20) {
-			                        var y2 = -20
-                                                while (y2<=20) {
-				                        var x3 = x1+x2
-				                        var y3 = y1+y2
-				                        if (x3<map.length&&x3>-1&&y3<map.length&&y3>-1) {
-					                        brightnessMap[x3][y3] += Math.min((Math.random()*0.02+0.98)/(x2**2+y2**2)*3,0.4)
-				                        }
-				                        y2++
-			                        }
-			                        x2++
-	                         	}
+		if (Math.random()<0.01*2**rarities.indexOf(items[drops[p].id].rarity)) {
+		        createParticles(drops[p].x, drops[p].y, drops[p].x, drops[p].y,
+		        [2,0], [5,0.0025], 0, Math.PI*2, 0.03, 0.05, pRC[items[drops[p].id].rarity], 
+		        "rgb", 0.003, 0.003, 1, 
+		        1.5**rarities.indexOf(items[drops[p].id].rarity), 
+		        20, 20, 0.98, 0.98)
+		}
+		
+		//If collides with the player then pick it up if there's slots
+		if (circleCollision(drops[p].x,drops[p].y,1/3*Math.SQRT2,player.pos[0]+0.5,player.pos[1]+0.5,Math.SQRT1_2)&&drops[p].life<=0) {
+			var j
+			for (j in inventory) {
+				if (inventory[j][0] == drops[p].id) {
+					inventory[j][1] += drops[p].amount
+					drops[p].amount = 0
+					break;
 				}
+				else if (inventory[j][0] == 0) {
+					inventory[j][1] += drops[p].amount
+					inventory[j][0] = drops[p].id
+					drops[p].amount = 0
+					break;
+				}
+                                if (j >= Math.min(34,player.stats.inventorySlots-1)) break;
+			}
+		}
+	} 
+	
+	//Render particles
+	p=-1;while (++p<particles.length) {
+
+		//Go through properties of the particles and do stuff based on it
+		var e = -1
+		while (++e < particles[p].type.length) {
+			var amp = particles[p].amp[e]
+                        switch (particles[p].type[e]) {
+		        	case 0: particles[p].radius  +=                              amp   ;break;//grow
+		        	case 1: particles[p].radius   = Math.max(particles[p].radius-amp,0);break;//shrink
+				case 2: particles[p].color[3] = particles[p].color[3]      - amp   ;break;//fade
+				case 3: particles[p].dy      -=                              amp   ;break;//
 		        }
-		        y++
 	        }
-		x++
+
+
+		//Select the color
+		switch (particles[p].colorType) {
+			case "rgb": ctx.fillStyle = "rgba("+particles[p].color[0]+","+particles[p].color[1]+"," +particles[p].color[2]+"," +particles[p].color[3]/255+")";break;
+		        case "hsl": ctx.fillStyle = "hsla("+particles[p].color[0]+","+particles[p].color[1]+"%,"+particles[p].color[2]+"%,"+particles[p].color[3]/255+")"
+		}
+		
+		//Draw the particle
+		ctx.beginPath()
+		ctx.arc((particles[p].x-player.pos[0]+7)*60,(particles[p].y-player.pos[1]+5)*60, particles[p].radius*60, 0, 7)
+		ctx.fill()
+		ctx.closePath()
+
+		//Update particles
+		particles[p].x += particles[p].dx; particles[p].y += particles[p].dy
+		particles[p].dx *= particles[p].friction; particles[p].dy *= particles[p].friction
+		particles[p].life--
 	}
+	
+	//Render damage text
+	p=-1;while (++p<texts.length) {
+		
+		//Update the text
+		texts[p].color[3] -= texts[p].fadeSpeed/4
+		texts[p].y -= texts[p].dy
+		texts[p].x += texts[p].dx
+		texts[p].dy -= 0.005
+
+		//Render the text
+		ctx.fillStyle = "rgba("+texts[p].color[0]+","+texts[p].color[1]+","+texts[p].color[2]+","+texts[p].color[3]/255+")"
+		ctx.fillText(texts[p].content, (texts[p].x-player.pos[0]+7)*60, (texts[p].y-player.pos[1]+5)*60)
+	}
+	
+	//Filter off "dead" things
+	projs = projs.filter(a => a.life>0)
+	drops = drops.filter(a => a.x>-1&&a.amount>0)
+	particles = particles.filter(a=>a.life>0)
+	texts = texts.filter(a=>a.color[3]>0)
+
+	//Render some more things
+	renderObjects()
+	renderEnemies()
+	build()
+
+	//Render the player in the middle of the screen (with rotation)
+	ctx.setTransform(1,0,0,1,0,0)
+	ctx.translate(screenShake[0],screenShake[1])
+	ctx.translate(450,330)
+	ctx.rotate(-Math.atan2(mousePos.x-450,mousePos.y-330)+Math.PI)
+	ctx.drawImage(sprite.player,-30,-30)
+
+	//Archived code
+	/*ctx.fillStyle = "#ff0";ctx.lineWidth = 2;ctx.beginPath();ctx.arc(450,330,30,0,7);ctx.fill();ctx.stroke();ctx.closePath()*/
+	/*ctx.beginPath();ctx.arc(450+51*Math.sin(-Math.atan2(mousePos.x-450,mousePos.y-330)+Math.PI),330-51*Math.cos(-Math.atan2(mousePos.x-450,mousePos.y-330)+Math.PI),player.stats.reach,0,7);ctx.stroke();ctx.closePath()*/
+	/*ctx.beginPath();var s = ((mousePos.x-450)**2+(mousePos.y-330)**2)**0.5;ctx.moveTo(x3+450,y3+330);ctx.lineTo(450+x3*2,330+y3*2);ctx.stroke();ctx.closePath() ;ctx.strokeStyle="#000000";ctx.beginPath();ctx.arc(-1,-31,player.stats.reach,0,7);ctx.strokeStyle="#ff0000";ctx.stroke();ctx.closePath()*/
+	
+	//Render brightness
+	ctx.setTransform(1,0,0,1,0,0)
+	ctx.translate(screenShake[0],screenShake[1])
+	renderBrightness()
+	ctx.setTransform(1,0,0,1,0,0)
+
+	//Render UI
+	renderBars()
+	renderGUI()
+	renderPowerups()
+	renderScreen()
+
+	//Render other stuff
+	ctx.font = "19px Roboto"
+	ctx.textAlign = "center"
+	renderInventory()
+	renderCursor()
 }
 function renderBars() {
-	//hp, stamina, armor, ... bar
+	//Bar area
 	ctx.fillStyle="rgba(0,0,0,0.3)";ctx.fillRect(700,485,200,115)
-	//hp bar red
+
+	//HP bar
 	ctx.fillStyle="#b00";ctx.fillRect(710,495,180,25)
-	//hp bar green
 	ctx.fillStyle="#0b0";ctx.fillRect(710,495,Math.max(player.stats.hp/player.stats.mhp,0)*180,25)
+	
 	ctx.fillStyle="rgba(0,0,0,0.8)"
-	//ctx.fillRect(710,495,180,25) //attack bar
 	ctx.fillRect(710,530,180,25) //armor bar
 	ctx.fillRect(710, 565, 180, 25) //stamina bar
 	ctx.fillRect(0,520,500,80) //hotbar
-	//attack bar 
-	//ctx.fillStyle="#ff0" 
-	//ctx.fillRect(710,495,Math.min(Math.max(0, player.attackCooldown/100*player.stats.attackSpeed), 1)*180,25)
-	//stamina bar
+	
+	//Stamina bar
 	ctx.fillStyle="#0cc";ctx.fillRect(710,565,player.stats.stamina/5*9,25)
 	ctx.fillStyle="#fff";ctx.font = "21px Roboto";ctx.textAlign = "center"
-	//hp bar number
+	
+	//HP bar number
         ctx.fillText(Math.floor(player.stats.hp)+" / "+player.stats.mhp,800,510)
-	//attack bar number
-	//ctx.fillText(Math.ceil((100-player.attackCooldown)/player.stats.attackSpeed*items[inventory[holding][0]].atkSpeed)/50+"s",800,510)
-	//armor bar
+	//Armor bar
 	ctx.fillStyle="#ddd"
+
+	//Damage reduction amount
 	var dmgAfter = 100/(player.stats.defense+100)
+
+	//Whatever this is
 	ctx.fillRect(710,530,Math.max(0,-Math.log10(dmgAfter)%1*180),25)
 	ctx.fillStyle = "#000"
 	if(dmgAfter>0.0001)ctx.fillText((100-dmgAfter*100).toFixed(2)+"%",800,545)
 	else ctx.fillText("1/"+(1/dmgAfter).toFixed(2),800,545)
-	//ctx.fillText(player.stats.stamina.toFixed(0)+"%",800,580)
 }
-function renderScreen() {
-	switch (screen) {
-                case "inventory":
-			ctx.fillStyle="#000000a0"
-			ctx.fillRect(55, 85, 780, 360)
-			//ctx.fillStyle="#442200"
-			//ctx.fillRect(60, 90, 570, 350)
-			//ctx.fillRect(635, 90, 195, 350)
-		break;
-		case "crafting":
-			ctx.fillStyle="#000000a0";ctx.fillRect(90, 85, 710, 360)
-			//ctx.fillStyle="#442200";ctx.fillRect(95, 90, 700, 350)
-			ctx.textAlign="center";ctx.font = "21px Roboto"
-			var k,l,m,recipesToIndex = []
-			for (k in recipes) {
-				var n = true,o = false
-				for (m in recipes[k][0]) {
-                                        if (!unlocked[recipes[k][0][m][0]]) {
-						n = false
-						break;
-					}						     
-				}
-				for (l in recipes[k][1]) {
-                                        if (recipes[k][1][l] == screenBonus[0]) {
-					        o = true       
-						break;
-					}
-				}
-				if (n&&o) {
-					recipesToIndex.push(k*1)
-				}
-			} //get recipes to display
-			for (k in recipesToIndex) {
-				var toDisplay = recipes[recipesToIndex[k*1+screenBonus[1]*30]]
-				if (k>29||toDisplay==undefined) break;
-				ctx.fillStyle = rarity_colors[items[toDisplay[2][0]].rarity]
-				ctx.fillRect(100+k%10*70, Math.floor(k/10)*70+95, 60, 60)
-				ctx.drawImage(sprite.items, 
-				toDisplay[2][0]%5*60, Math.floor(toDisplay[2][0]/5)*60
-				, 60, 60, 100+k%10*70, Math.floor(k/10)*70+95, 60, 60)
-			}
-                        var itemsHave = Array(items.length).fill(0)                     
-			for (k in inventory) {
-				if(k==34)break;
-                                itemsHave[inventory[k][0]] = inventory[k][1]
-			}
-			if (!recipesToIndex.length) {
-				ctx.fillStyle="#fff";ctx.fillText("You should get some resources...",445, 265)	
-		        } else {	     
-			        var q = pickup("crafting")
-			        if (q>-2&&q+screenBonus[1]*30<recipesToIndex.length) {
-				        if (click[0]) {
-                                                craftItems(recipesToIndex[q+screenBonus[1]*30])
-				        }
-					for (k in recipes[recipesToIndex[q]][0]) {
-						var t = recipes[recipesToIndex[q]][0][k]
-                                                ctx.fillStyle = rarity_colors[items[t[0]].rarity]
-						ctx.fillRect(100+70*k,305,60,60)
-						ctx.drawImage(sprite.items, t[0]%5*60, Math.floor(t[0]/5)*60, 60, 60, 100+k*70, 305, 60, 60)
-					        ctx.fillStyle = t[1] /*amt needed*/ <= itemsHave[t[0]] /*amt have*/ ? "#0f0" : "#f00"
-						ctx.fillText(t[1],130+70*k,370)
-					}
-			        } else if (q==-3&&click[0]) {
-                                        screenBonus[1]-- //<
-				} else if (q==-4&click[0]) {
-					screenBonus[1]++ //>
-				}
-				if(screenBonus[1]>=0)screenBonus[1] %= Math.ceil(recipesToIndex.length/30)
-				else screenBonus[1] = Math.ceil(recipesToIndex.length/30)-1
-			        ctx.font = "22px Roboto"
-				ctx.textAlign = "center"
-				ctx.fillStyle = "#fff"
-				ctx.fillText("Page "+(screenBonus[1]+1), 450, 405)
-				//ctx.fillText(10**screenBonus[2], 730, 405)
-				ctx.fillStyle = "#000"
-				ctx.fillRect(365,385,40,40);ctx.fillRect(495,385,40,40)
-				//ctx.fillRect(605,385,40,40);ctx.fillRect(735,385,40,40)
-				ctx.fillStyle = "#fff"
-				ctx.fillRect(370,390,30,30);ctx.fillRect(500,390,30,30)
-				//ctx.fillRect(610,390,30,30);ctx.fillRect(740,390,30,30)
-				ctx.fillStyle="#000"
-				ctx.font = "28px Roboto"
-				ctx.fillText("<",385,407);ctx.fillText(">",515,407)
-				//ctx.fillText("-",625,407);ctx.fillText("+",755,407)
-		        }                 
-		break;
-		case "storage":
-                        ctx.fillStyle="#000000a0"
-			ctx.fillRect(200,225,500,150) //draw the tab itself
-			var a
-			for (a in objectMap[screenBonus[0]][screenBonus[1]][3].storage) {
-				var item = objectMap[screenBonus[0]][screenBonus[1]][3].storage[a]
-				ctx.fillStyle = rarity_colors[items[item[0]].rarity]
-				ctx.fillRect(a%7*70+210,Math.floor(a/7)*70+235,60,60)
-				ctx.drawImage(sprite.items, item[0]%5*60, Math.floor(item[0]/5)*60, 60, 60, a%7*70+210, Math.floor(a/7)*70+235, 60, 60)
-			        ctx.fillStyle = "#fff";ctx.textAlign="center"
-				if(item[0])ctx.fillText(item[1], a%7*70+240,Math.floor(a/7)*70+300)
-				var touch = pickup("storage")
-				if (click[0]&&touch!==-2) {
-					var tempOut = objectMap[screenBonus[0]][screenBonus[1]][3].storage[touch].slice()
-					objectMap[screenBonus[0]][screenBonus[1]][3].storage[touch] = out.slice()
-	                                out = tempOut.slice()
-				}
-			}
-		break;
-	}
-}
-function build() {
-	var builds =  [2 ,3 ,4 ,14,15,16,29,30,31,39,40,42,50,51,52]
-	var objects = [16,14,15,17,18,21,19,20,22,23,24,25,27,28,26]
-	var index = builds.indexOf(inventory[holding][0])
-	if (index!==-1) {
-		var indexToDraw = objects[index]-1
-		var tile = [Math.floor(mousePos.x/60),Math.floor(mousePos.y/60)]
-		var x2 = tile[0]-7+player.pos[0]
-		var y2 = tile[1]-5+player.pos[1]
-		ctx.drawImage(sprite.object,indexToDraw%5*60,Math.floor(indexToDraw/5)*60,60,60,tile[0]*60,tile[1]*60,60,60)
-	        ctx.fillStyle = "hsla("+ (220-(220*map[x2][y2]))+",100%,"+15*(Math.cos(hr*Math.PI/12+Math.PI)+1.35)+"%,0.3)"
-	        ctx.fillRect(tile[0]*60,tile[1]*60,60,60)
-		ctx.fillStyle = (objectMap[x2][y2][0] == 0 &&map[x2][y2]>0.3)? "#0000" : "rgba(255,0,0,0.5)"
-	        ctx.fillRect(tile[0]*60,tile[1]*60,60,60) //display transparent version of object
-		if (mouseDown[2]) {
-                        if (objectMap[x2][y2][0] == 0&&map[x2][y2]>0.3) {
-                                objectMap[x2][y2] = [objects[index], objectHP[objects[index]], objectHP[objects[index]], {}, 0]
-				inventory[holding][1]--
-			} //only place if target is nothing or high
-		} //place object
-	}
-}
-function showDetails() {
-	var touched = -2
-        if (mousePos.y>=530&&mousePos.x<500&&mousePos.y<=590) {
-                if (mousePos.x%70-9>0) {
-			touched = Math.floor(mousePos.x/70)
+function renderBrightness() {
+	//Update the brightness before rendering
+        updateBrightness()
+
+	//Loop through an area around the player
+	var x=-15
+        while (x<=15) {
+                var y=-10	
+	        while (y<=10) {
+
+			//Get the position
+			var x2 = x+player.pos[0]
+			var y2 = y+player.pos[1]
+
+			//Render if it's in bounds
+                        if (x2<map[0].length&&x2>-1&&y2<map.length&&y2>-1) {
+
+				//Render brightness
+				ctx.fillStyle = "rgba(0,0,0,"+Math.max(Math.min(1-brightnessMap[x2][y2],1),0)+")"
+				ctx.fillRect( x * 60 + 420 , y * 60 + 300 , 60 , 60)                             
+			}    
+			y++
 		}
-	} else if (mousePos.y>=95&&mousePos.x>=65&&(mousePos.y%70<15||mousePos.y%70>24)&&(mousePos.x+5)%70<60&&mousePos.x<=644&&mousePos.y<=444&&screen=="inventory") {
-                touched = Math.floor((mousePos.x-65)/70)+(4-Math.floor((mousePos.y-95)/70))*7
-	}
-	if(touched!==-2&&touched<player.stats.inventorySlots) {
-                ctx.fillStyle = rarity_colors[items[inventory[touched][0]].rarity]
-		ctx.fillRect(640, 95, 60, 60)
-		ctx.drawImage(sprite.items, 
-		inventory[touched][0]%5*60, Math.floor(inventory[touched][0]/5)*60
-		, 60, 60, 640, 95, 60, 60)
-		ctx.fillStyle = "#fff"
-		ctx.font = Math.floor(240/(items[inventory[touched][0]].name.length))+"px Roboto"
-		ctx.fillText(items[inventory[touched][0]].name,765,125)
-		ctx.font = "18px Roboto"
-		ctx.textAlign = "left"
-		wrapText("Damage: "+items[inventory[touched][0]].minDamage+" - "+items[inventory[touched][0]].maxDamage, 640, 170, 185, 17)
-	        ctx.fillText("Rarity:", 640, 190, 185, 17)	
-		ctx.fillStyle=rarity_colors[items[inventory[touched][0]].rarity];ctx.fillText(items[inventory[touched][0]].rarity.toUpperCase(), 694, 190);ctx.fillStyle="#fff"      
-		wrapText("Description: "+items[inventory[touched][0]].desc, 640, 210, 185, 17)
-	}
+	        x++
+        }
 }
 function renderCursor() {
 	ctx.fillStyle = "#fff9"
+
+	//Render circl around mouse
         ctx.beginPath()
 	ctx.arc(mousePos.x,mousePos.y,4,0,7)
 	ctx.fill()
 	ctx.closePath()
+
+	//Attack bar
 	ctx.fillStyle="#0009";ctx.fillRect(mousePos.x-18,mousePos.y+8,36,6)
-	ctx.fillStyle="#fff9"; ctx.fillRect(mousePos.x-18,mousePos.y+8,Math.min(36,Math.max(0,player.attackCooldown/25*9)),6)
+	ctx.fillStyle="#fff9"; ctx.fillRect(mousePos.x-18,mousePos.y+8,Math.min(36,Math.max(0,player.attackCooldown/2.222)),6)
+}
+function renderEnemies() {
+        var a = -1
+	var shift = {
+		"zombie": 30,
+		"skeleton": 30,
+	}
+	var drawX = {
+		"zombie": 0,
+		"skeleton": 60,
+	}
+	var drawY = {
+		"zombie": 0,
+		"skeleton": 0,
+	}      
+	while (++a<enemies.length) {
+		//Update the enemies
+		enemies[a].tick()
+
+		//Draw the enemies
+		var tag = enemies[a].tag
+		ctx.translate((enemies[a].x-player.pos[0]+8)*60-shift[tag],(enemies[a].y-player.pos[1]+6)*60-shift[tag])
+		ctx.rotate(enemies[a].rotation)
+		ctx.drawImage(sprite.enemies, drawX[tag], drawY[tag], 60, 60, 
+		-30,-30,60,60)
+		ctx.setTransform(1,0,0,1,0,0)
+		ctx.translate(screenShake[0],screenShake[1])
+
+	        //If enemy is kill then increase ruby power	
+		if(enemies[a].hp<=0)player.powerups.rubyPower += player.powerups.ruby
+	        
+		//HP bar
+		ctx.fillStyle = "#f00";ctx.fillRect((enemies[a].x-player.pos[0]+7)*60,(enemies[a].y-player.pos[1]+5)*60+10,60,5)
+	        ctx.fillStyle = "#0f0";ctx.fillRect((enemies[a].x-player.pos[0]+7)*60,(enemies[a].y-player.pos[1]+5)*60+10,Math.max(0,enemies[a].hp/enemies[a].mhp*60),5)
+		
+		//Attack bar
+		ctx.fillStyle = "#aaa";ctx.fillRect((enemies[a].x-player.pos[0]+7)*60,(enemies[a].y-player.pos[1]+5)*60-5,60,5)
+		ctx.fillStyle = "#ff0";ctx.fillRect((enemies[a].x-player.pos[0]+7)*60,(enemies[a].y-player.pos[1]+5)*60-5,Math.max(0,enemies[a].cooldown/enemies[a].attackInterval*60),5)
+	}
+
+	//Filter off dead enemies
+	enemies = enemies.filter(a => a.hp>0)
+}
+function renderGUI() {
+	//Background
+	ctx.fillStyle = "#000000a0"
+	ctx.fillRect(0,240,130,120)
+
+	//GUI icons
+	ctx.drawImage(sprite.gui, 0 , 0, 30, 30, 0, 240, 30, 30)
+	ctx.drawImage(sprite.gui, 30, 0, 30, 30, 0, 270, 30, 30)
+	ctx.drawImage(sprite.gui, 60, 0, 30, 30, 0, 300, 30, 30)
+	ctx.drawImage(sprite.gui, 90, 0, 30, 30, 0, 330, 30, 30)
+
+	ctx.textAlign = "left";ctx.font="21px Roboto"
+	
+	//Time
+	var time = Math.floor((hr%1*60)).toString().length<2?"0"+Math.floor(hr%1*60):Math.floor(hr%1*60)
+	
+	//Render values
+	ctx.fillStyle = "rgb(195,195,195)";ctx.fillText(Math.floor(hr)+":"+time, 40, 257)
+	ctx.fillStyle = "rgb(0,162,232)"  ;ctx.fillText(day, 40, 287)
+	ctx.fillStyle = "rgb(34,177,76)"  ;ctx.fillText(Math.floor(player.exp)+"/"+(player.level+1)*200, 40, 317)
+	ctx.fillStyle = "rgb(255,242,0)"  ;ctx.fillText("Level "+player.level, 40, 347) 
+}
+function renderHeight() {
+	//Loop thruough
+        var x=-15
+        while (x<=15) {
+                var y=-10	
+	        while (y<=10) {
+			var x2 = x+player.pos[0]
+			var y2 = y+player.pos[1]
+			//Color if in bounds, black if not
+                        if (x2<map[0].length&&x2>-1&&y2<map.length&&y2>-1) {
+				ctx.fillStyle = getColorFromHeight(map[x2][y2])
+			} else {
+				ctx.fillStyle="black"
+			}                       
+                        ctx.fillRect( x * 60 + 420, y * 60 +300, 60 , 60)  
+			y++
+		}
+	        x++
+        }
 }
 function renderInventory() {
 	for (q in inventory) {
-		if(q >= 35) break;
-		//ctx.drawImage(sprite.rick, inventory[p][0]%2*60, Math.floor(inventory[p][0]/2)*60, 60, 60, 10+70*p, 530, 60, 60)
-                if (q < 7) {
+		//If past amount stop
+		if(q*1 >= 35) break;
+
+		//Render hotbar
+                if (q*1 < 7) {
+			//Background
 			ctx.fillStyle = rarity_colors[items[inventory[q][0]].rarity]
 			ctx.fillRect(10+70*q, 530, 60, 60)
+
+			//Foreground
 		        ctx.drawImage(sprite.items, inventory[q][0]%5*60, Math.floor( inventory[q][0]/5 )*60, 60, 60, 10+70*q, 530, 60, 60)
-		        ctx.fillStyle = "rgba(0, 0, 0, 0.25)"
+		        
+			//Background darker when held
+			ctx.fillStyle = "rgba(0, 0, 0, 0.25)"
 			if (q==holding) ctx.fillRect(70*q+10, 530, 60, 60)       
+			
+			//Render text if not air
 			if (inventory[q][0]) {
 			        ctx.fillStyle = "#fff"
 			        ctx.fillText(inventory[q][1], 40+70*q, 593)
-				//10+70*q, 530
 		        }  
 	        } 
+		
+		//Render inventory
 		if (screen=="inventory") {
-			if (q > Math.min(player.stats.inventorySlots,35)-1) {
-				//ctx.fillRect( q%9*70+100, 375-Math.floor(q/9)*70, 60, 60)
+			if (q >= Math.min(player.stats.inventorySlots,35)) {
 			} else {
+				//Background
 				ctx.fillStyle = rarity_colors[items[inventory[q][0]].rarity]
 				ctx.fillRect(q%7*70+65, 375-Math.floor(q/7)*70, 60, 60)
-				ctx.drawImage(sprite.items, 
-				inventory[q][0]%5*60, Math.floor(inventory[q][0]/5)*60
-				, 60, 60, q%7*70+65, 375-Math.floor(q/7)*70, 60, 60)
+
+				//Foreground
+				ctx.drawImage(sprite.items, inventory[q][0]%5*60, Math.floor(inventory[q][0]/5)*60, 60, 60, q%7*70+65, 375-Math.floor(q/7)*70, 60, 60)
+				
+				//Darker if held
 				ctx.fillStyle = "rgba(0, 0, 0, 0.25)"
 				if (q==holding) ctx.fillRect(q%7*70+65, 375-Math.floor(q/7)*70, 60, 60)
 				ctx.fillStyle = "#fff"
+				
+				//Render text if it's not air
 				if(inventory[q][0])ctx.fillText(inventory[q][1], q%7*70+95, 438-Math.floor(q/7)*70)
 			}
 		}
 	}
+
+	//Render things holding
 	if (out[0]!=0) {
 		ctx.drawImage(sprite.items, out[0]%5*60, Math.floor( out[0]/5 )*60, 60, 60, mousePos.x-30, mousePos.y-30, 60, 60)
 	        ctx.fillStyle = "#fff"
 	        ctx.fillText(out[1], mousePos.x, mousePos.y+30)
 	}
 	if (screen!=="inventory")return
+
+	//Armors shenanigans
 	var touch = -2
 	var armors = [23,35,46,58,73,88,99,112,122]
 	if (click[0]) {
@@ -1634,492 +885,777 @@ function renderInventory() {
 		ctx.fillRect(560, 165+q*70, 60, 60)
 		ctx.drawImage(sprite.items, inventory[35][q]%5*60, Math.floor(inventory[35][q]/5)*60, 60, 60, 560, 165+q*70, 60, 60)
 	}
+	
+	//Show details ._.
 	showDetails()
 }
-function calcPower(n) {
-	//var b=0,n=n||0,str=typeof str === "number"?str:1
-	//switch (type) {
-	//	case 0:var a=0;while(a++<n){b+=(1+str)/(a+str)};break; //diminishing returns?
-	//	case 1:b=n*str;break; //linear
- //               case 2:b=n**(str+.1)+calcPower(1,n,str*.4)+str*.6;break;   //quadratics/polynomials
-		//case 3:b=n>0?(str+.008)**n:0;break; //exponential
-	//}
-	//return b
-	return Math.log(n)/Math.log(1.6)
-}
-function spawnVein(id, times, size) {
-	while (times--) {
-		var X = Math.floor(random.nextFloat()*map.length) 
-	        var Y = Math.floor(random.nextFloat()*map.length)
-		while (map[X][Y]<.32) {
-                        X = Math.floor(random.nextFloat()*map.length) 
-	                Y = Math.floor(random.nextFloat()*map.length)
+function renderMinimap() {
+	
+	//Buggy
+	var a=0
+
+	//Map
+	var ctx3 = document.getElementById("canvas3").getContext("2d")
+	while (a<map.length) {
+		var b=0
+		while (b<map.length) {
+			ctx3.fillStyle = getColorFromHeight(map[a][b])
+			ctx3.fillRect(b/2,a/2,1,1)
+			b+=2
 		}
-		var x = -size
-		while (x<=size) {
-			var y = -size
-			while (y<=size) {
-				var chance = Math.sqrt(x**2+y**2)/size
-				var x2 = Math.max(Math.min(map.length-1,x+X),0)
-				var y2 = Math.max(Math.min(map.length-1,y+Y),0)
-				if (chance<(random.nextFloat())&&map[x2][y2]>.32&&random.nextFloat()<.1) {
-					objectMap[x2][y2] = [id, objectHP[id], objectHP[id], {}, 0]
+		a+=2
+	}
+
+	//Player
+	ctx3.fillStyle = "#f00"
+	ctx3.beginPath()
+	ctx3.arc(Math.floor(player.pos[0]/2),Math.floor(player.pos[1]/2),4,0,7)
+	ctx3.fill()
+	ctx3.closePath()
+}
+function renderObjects() {
+	var x=-15
+	while (x<=15) {
+                var y=-10
+	        while (y<=10) {
+			var x2 = x+player.pos[0]
+			var y2 = y+player.pos[1]
+                        if (x2<map[0].length&&x2>-1&&y2<map.length&&y2>-1) {
+
+				//Update storage for chests
+				if (objectMap[x2][y2][0]==19&&objectMap[x2][y2][3].storage==undefined) {
+					objectMap[x2][y2][3].storage = Array(7).fill([0,0]).map(copy)
+				} else if (objectMap[x2][y2][0]==20&&objectMap[x2][y2][3].storage==undefined) {
+					objectMap[x2][y2][3].storage = Array(14).fill([0,0]).map(copy)
 				}
-				y++
+
+				//Torch particles effect
+				if (objectMap[x2][y2][0]==23) {
+					createParticles(0.35+x2,0.2 +y2,0.65+x2,0.4 +y2,[1,2],[0.0015,5],2.6415,3.6415,0.03,0.055,[255,40,40,255] ,"rgb",0.08,0.1 ,2,3,50,52,0.96,0.98)
+				        createParticles(0.45+x2,0.35+y2,0.55+x2,0.55+y2,[1,2],[0.0015,5],2.6415,3.6415,0.03,0.055,[255,120,40,255],"rgb",0.07,0.09,1,2,50,52,0.96,0.98)
+					createParticles(0.45+x2,0.35+y2,0.55+x2,0.55+y2,[1,2],[0.0015,5],2.6415,3.6415,0.03,0.055,[255,190,40,255],"rgb",0.05,0.07,1,2,50,52,0.96,0.98)
+				}
+				
+				//Size
+				var size = loglerp(20,60,objectMap[x2][y2][4]/10)
+
+				//Render the object and increase size
+				if (objectMap[x2][y2][0] > 0) {
+                                        ctx.drawImage(sprite.object, (objectMap[x2][y2][0]-1)%5*60,Math.floor((objectMap[x2][y2][0]-1)/5)*60,60,60,x*60+(60-size)/2+420,y*60+(60-size)/2+300,size,size)
+				        objectMap[x2][y2][4]++
+				}
+
+				//HP bar if close
+				if (objectMap[x2][y2][0] > 0 && Math.abs(x)+Math.abs(y)<=4) {
+                                        ctx.fillStyle = "#f00"; ctx.fillRect(x*60+420, y*60+290, 60, 4)
+					ctx.fillStyle = "#0f0"; ctx.fillRect(x*60+420, y*60+290, 60*Math.max(0, objectMap[x2][y2][1]/objectMap[x2][y2][2]), 4)
+				}                      
 			}
-			x++
+			y++
 		}
-	}
-}
-function spawnEnemies() {
-	var spwnPower = (Math.log(day)+1)*2.5*Math.random()*Math.sqrt(diffMult)
-	while (spwnPower>=2) {
-		if (spwnPower>=2) {
-			spwnPower-=2
-			var spawnPos = [Math.floor(Math.random()*70)-35+player.pos[0],Math.floor(Math.random()*70)-35+player.pos[1]]
-		        while (spawnPos[0]<0||spawnPos[0]>=map.length||spawnPos[1]<0||spawnPos[1]>=map.length) {
-				spawnPos = [Math.floor(Math.random()*70)-35+player.pos[0],Math.floor(Math.random()*70)-35+player.pos[1]]
-			}       
-			var a = 20       
-			while (objectMap[spawnPos[0]][spawnPos[1]][0]&&a-->0) {
-				spawnPos = [Math.floor(Math.random()*70)-35+player.pos[0],Math.floor(Math.random()*70)-35+player.pos[1]]
-			        console.log(spawnPos)
-				console.log(objectMap[spawnPos[0]][spawnPos[1]])
-			}
-			if (a>0) {
-				enemies.push({
-                                        attackInterval: 100,
-					moveInterval:25,
-					rotation: 0,
-					cooldown: 0,
-					moveCooldown: 0,
-					id: 0,
-					hp: 35*diff,
-					mhp: 35*diff,
-					minDamage:4*diff,
-					maxDamage:5*diff,
-					tick: function() {
-						this.cooldown++
-						this.moveCooldown++
-						this.rotation = -Math.atan2(this.x-player.pos[0],this.y-player.pos[1])
-						if (this.moveInterval<=this.moveCooldown) {
-                                                        this.move()
-							this.moveCooldown = 0
-						}
-						if (this.attackInterval<=this.cooldown) {
-							this.attack()
-							this.cooldown = 0
-						}
-					},
-					x: spawnPos[0],
-					y: spawnPos[1],
-					attack: function() {
-						var xAttack = this.x+0.5+51/60*Math.sin(this.rotation)
-						var yAttack = this.y+0.5-51/60*Math.cos(this.rotation)
-                                                var x=-10
-						while (x<=10) {
-							var y=-10
-							while (y<=10) {
-								var coll = circleCollision(xAttack,yAttack,0.5,this.x+x+0.5,this.y+y+0.5,Math.SQRT1_2)
-								if (coll) {
-									var damageDealt = Math.round(randomRange(this.minDamage,this.maxDamage))
-									objectMap[x+this.x][y+this.y][1] -= damageDealt
-                                                                        if(objectMap[x+this.x][y+this.y][0]){texts.push({
-                                                                                x: x+0.5,
-					                                        y: y+0.5,
-					                                        dx: Math.random()/5-0.1,
-					                                        dy: 0.15,
-					                                        fadeSpeed: 8,
-					                                        color: [0, 0, 0, 255],
-					                                        content: damageDealt,
-							                })}
-								}
-								y++
-							}
-							x++
-						}
-						if (circleCollision(xAttack,yAttack,0.5,player.pos[0]+0.5,player.pos[1]+0.5,Math.SQRT1_2)) {
-							var dmgDealt = Math.round(randomRange(this.minDamage,this.maxDamage)) * 100 / (player.stats.defense+100)
-							player.stats.hp = Math.max(0, player.stats.hp-dmgDealt)
-							texts.push({
-                                                                x: player.pos[0]+0.5,
-					                        y: player.pos[1]+0.5,
-					                        dx: Math.random()/5-0.1,
-					                        dy: 0.15,
-					                        fadeSpeed: 8,
-					                        color: [255, 255, 255, 255],
-					                        content: damageDealt,
-							})
-							var particleRad = Math.atan2(this.x-player.pos[0],this.y-player.pos[1])+Math.PI
-							createParticles(0.45+player.pos[0],0.45+player.pos[1],0.55+player.pos[0],0.55+player.pos[1],[1,2],[0.005,10],-0.7+particleRad,0.7+particleRad,0.06,0.1,[255,0,0,255],"rgb",0.1,0.13,3,5,40,50,0.97,0.98)
-						        createParticles(0.45+player.pos[0],0.45+player.pos[1],0.55+player.pos[0],0.55+player.pos[1],[1,2],[0.005,10],-0.7+particleRad,0.7+particleRad,0.06,0.1,[200,0,0,255],"rgb",0.1,0.13,3,5,40,50,0.97,0.98)
-						}
-					},
-					move: function() {
-                                                var dist = []
-						dist[0] = objectMap[this.x+1][this.y][0]?Infinity:(this.x+1-player.pos[0])**2+(this.y-player.pos[1])**2
-						dist[1] = objectMap[this.x-1][this.y][0]?Infinity:(this.x-1-player.pos[0])**2+(this.y-player.pos[1])**2
-                                                dist[2] = objectMap[this.x][this.y+1][0]?Infinity:(this.x-player.pos[0])**2+(this.y+1-player.pos[1])**2
-						dist[3] = objectMap[this.x][this.y-1][0]?Infinity:(this.x-player.pos[0])**2+(this.y-1-player.pos[1])**2
-						var index = 0,a,min=Infinity
-						var m = [[1,0],[-1,0],[0,1],[0,-1]]
-						for (a in dist) {
-							if (dist[a]<min) {
-								index = a*1
-								min = dist[a]
-							}
-						}					        
-						var tempX = this.x
-						var tempY = this.y
-						tempX += m[index][0]
-						tempY += m[index][1]
-						var collidedWithMobs = false
-						for (a in enemies) {
-                                                        if (enemies[a].x == tempX && enemies[a].y == tempY) {
-                                                                collidedWithMobs = true
-								break;
-							}
-						}
-						if (!objectMap[tempX][tempY][0]&&!(tempX==player.pos[0]&&tempY==player.pos[1])&&!collidedWithMobs) {
-                                                        this.x = tempX
-							this.y = tempY
-						} 
-					},
-				})
-			}
-		}
-	}
-}
-function levelUp() {
-	while (player.exp>=(player.level+1)*200) {
-                player.level++
-		player.exp-=player.level*200
-		var a = Object.keys(player.powerups)
-		var b = a.length*Math.random()<<0
-		while (a[b]=="berserkActive"||a[b]=="rubyPower") {
-			b = a.length*Math.random()<<0
-		}
-		player.powerups[a[b]]++
-	}
-}
-function renderGUI() {
-	ctx.fillStyle = "#000000a0"
-	ctx.fillRect(0,240,130,120)
-	ctx.drawImage(sprite.gui, 0 , 0, 30, 30, 0, 240, 30, 30)
-	ctx.drawImage(sprite.gui, 30, 0, 30, 30, 0, 270, 30, 30)
-	ctx.drawImage(sprite.gui, 60, 0, 30, 30, 0, 300, 30, 30)
-	ctx.drawImage(sprite.gui, 90, 0, 30, 30, 0, 330, 30, 30)
-	ctx.textAlign = "left";ctx.font="21px Roboto"
-	var time = Math.floor((hr%1*60)).toString().length<2?"0"+Math.floor(hr%1*60):Math.floor(hr%1*60)
-	ctx.fillStyle = "rgb(195,195,195)";ctx.fillText(Math.floor(hr)+":"+time, 40, 257)
-	ctx.fillStyle = "rgb(0,162,232)"  ;ctx.fillText(day, 40, 287)
-	ctx.fillStyle = "rgb(34,177,76)"  ;ctx.fillText(Math.floor(player.exp)+"/"+(player.level+1)*200, 40, 317)
-	ctx.fillStyle = "rgb(255,242,0)"  ;ctx.fillText("Level "+player.level, 40, 347) 
+	        x++
+        }
 }
 function renderPowerups() {
+	//Background
 	ctx.fillStyle="#000000a0";ctx.fillRect(750,0,150,120)
-	ctx.drawImage(sprite.powerups, 0, 0, 150, 120, 750, 0, 150, 120)
+	
+	//Change text
 	ctx.textAlign = "center";ctx.fillStyle="#fff";ctx.font = "14px Roboto"
-	var index = ["dumbbell","box","rock","milk1","milk2","glove","clover1","taser","tooth","milk3","pill","milk4","quiver","drive","berserk","book","clover2","ruby","ring"]
+	
+	//Whatever this is
+	let index = ["dumbbell","box","rock","milk1","milk2","glove","clover1","taser","tooth","milk3","pill","milk4","quiver","drive","book","clover2","ruby","berserk","ring"]
+	
+	//Loop thru powerups
 	for (const n in player.powerups) {
-                if(n=="rubyPower"||n=="berserkActive")continue
-	        var q = index.indexOf(n)
+		//Dont render if amount is 0 or these 2 "powerups"
+                if(!player.powerups[n]||n=="rubyPower"||n=="berserkActive")continue
+	        
+		//Index
+		var q = index.indexOf(n)
+
+		//Render
+		ctx.drawImage(sprite.powerups, q%5*30, Math.floor(q/5)*30, 30, 30, 750+q%5*30, Math.floor(q/5)*30, 30, 30)
 		ctx.fillText(player.powerups[n],q%5*30+765,Math.floor(q/5)*30+30)
 	}
 }
-//non gameplay functions 
-function overflowRange(min, max, n) {
-   var size = max-min+1
-   if (n>max) return min+(n-max)%size
-   else if (n<min) return max+(n-min)%size
-   else return n 
-}
-function repeatFunc(func,times){while(times--){func()}}
-var diffMult = 1
-function Load() { //creates the map on load 
-        diffMult = prompt("Difficulty?\n1. Easy\n2. Medium\n3. Hard\n4. Elite Gamer")
-	seed = prompt("Seed? (from 0 to 16777216)")
-	if (diffMult==null||diffMult==""){diffMult = 1 }else{diffMult*=1}
-	if (seed==null||seed==""||seed<0||seed>16777216){seed = Math.round(Math.random()*2**24)}else{seed*=1}
-        map = Array(height).fill(Array(width).fill(0)).map(copy)
-	random = new RNG(seed)
-	random3 = new RNG(2**24-seed)
-        intv = setInterval(maps,20) //useless
-        console.time("test")
-    //heatMap = baseMap(width,height)
-     /*81 == update times*/
-    /* for(ai in Array(8).fill(0)){
-        createEntity(Math.random()*400+100,Math.random()*400+100, 40 , "phsads")
-        createEntity(Math.random()*400+100,Math.random()*400+100, 220 , "phsads2")
-    } */
-}
-function wrapText(text, x, y, maxWidth, lineHeight) {
-        var words = text.split(' ');
-        var line = '';
-
-        for (var n = 0; n < words.length; n++) {
-                var testLine = line + words[n] + ' ';
-                var metrics = ctx.measureText(testLine);
-                var testWidth = metrics.width;
-                if (testWidth > maxWidth && n > 0) {
-                        ctx.fillText(line, x, y);
-                        line = words[n] + ' ';
-                        y += lineHeight;
-                } else {
-                        line = testLine;
-                }
-        }
-        ctx.fillText(line, x, y);
-}
-document.body.onmousedown = function(evt) { 
-  mouseDown[evt.button] = 1;
-}
-canvas.oncontextmenu = function(e) { e.preventDefault(); e.stopPropagation(); }
-document.body.onmouseup = function(evt) {
-  mouseDown[evt.button] = 0;
-}
-function circleCollision(x1,y1,r1,x2,y2,r2) {return !((x1-x2)**2+(y1-y2)**2>(r1+r2)**2)}
-function weighted_random(a) {
-	//a = {"2":weight}
-	var b,c=0,d
-	for (b in a) {
-                c += a[b]
-	}
-	d = Math.random()*c
-	for (b in a) {
-		if (d < a[b]) {
-			return b
-		}
-		d -= a[b]
-	}
-}
-function getMousePos(event) {
-    var rect = canvas.getBoundingClientRect();
-    mousePos = {
-        x: event.clientX - rect.left,
-        y: event.clientY - rect.top
-    };
-} //stolem code boo boo boo boo boo boo
-function randomRange(min, max) {return Math.random()*(max-min)+min}
-function format(a) {
-    if (a<=1000) return a
-    var b = ["K","M","B","T","Qa","Qi","Sx","Sp","Oc"]
-    var c = Math.floor(Math.log10(a)/3)
-    return (a/1000**c).toFixed(2) + b[c-1]
-}
-//map generation
-function random2(a) { //random function
-    var r=[seed],h=0
-    while (h<70) {
-        h++
-        r[h] = ( (a**1.1+seed**0.7-7*a+21)*r[h-1] )%1
-    }
-    return r[70]
-}
-function RNG(seed) {
-  // LCG using GCC's constants
-  this.m = random2(seed)*(2**31)+1024
-  this.a = random2(seed)*(2**15)+128
-  this.c = random2(seed)*(2**12)+64
-
-  this.state = seed ? seed : Math.floor(Math.random() * (this.m - 1));
-  this.nextInt = function() {
-  this.state = (this.a * this.state + this.c) % this.m;
-  return this.state;
-  }
-  this.nextFloat = function() {
-  // returns in range [0,1]
-  return this.nextInt() / (this.m - 1);
-}
-  this.nextRange = function(start, end) {
-  // returns in range [start, end): including start, excluding end
-  // can't modulu nextInt because of weak randomness in lower bits
-  var rangeSize = end - start;
-  var randomUnder1 = this.nextInt() / this.m;
-  return start + Math.floor(randomUnder1 * rangeSize);
-}
-  this.choice = function(array) {
-  return array[this.nextRange(0, array.length)];
-  }
-} 
-function scaleConcat(array, factor) {
-	let scaled = [];
-
-	for(const row of array) {
-		let x = [];
-
-		for(const item of row)
-			x = x.concat(Array(factor).fill(item));
-
-		scaled = scaled.concat(Array(factor).fill(x));
-	}
-
-	return scaled.map(copy);
-}
-function maps() {
-	addMaps()
-	times++
-	avgMap()
-    //heatMaps() //update heatmaps
-        if (times>maxTimes){addMaps();clearInterval(intv);normalize()}
-}
-function addMaps() {
-        var y1
-	for (y1 in map) {
-		for (x1 in map) {
-			var n=0
-			while (n++<avg) {
-                                map[y1][x1] += random.nextFloat()-0.5 //add a random value
+function renderScreen() {
+	switch (screen) {
+                case "inventory":
+			//Background
+			ctx.fillStyle="#000000a0"
+			ctx.fillRect(55, 85, 780, 360)
+		break;
+		case "crafting":
+			//Background
+			ctx.fillStyle="#000000a0";ctx.fillRect(90, 85, 710, 360)
+			ctx.textAlign="center";ctx.font = "21px Roboto"
+			var recipesToIndex = []
+			let k=-1
+			//Get recipes to display
+			while (++k<recipes.length) {
+				let n = true,o = false,m=-1,l=-1
+				while (++m<recipes[k][0].length) {
+                                        if (!unlocked[recipes[k][0][m][0]]) {
+						n = false
+						break;
+					}						     
+				}
+				while (++l<recipes[k][1].length) {
+                                        if (recipes[k][1][l] == screenBonus[0]) {
+					        o = true       
+						break;
+					}
+				}
+				if (n&&o) {
+					recipesToIndex.push(k*1)
+				}
 			}
-			max=Math.max(map[y1][x1],max);min=Math.min(map[y1][x1],min) //change the min max
-		}
-	}  
+			
+			//Render the recipes
+			k=-1
+			while (++k<recipesToIndex.length) {
+
+				//Get recipe to display
+				var toDisplay = recipes[recipesToIndex[k*1+screenBonus[1]*30]]
+				
+				//If there's no recipe or it's outside the screen then stop the loop
+				if (k>29||toDisplay==undefined) break;
+
+				//Background
+				ctx.fillStyle = rarity_colors[items[toDisplay[2][0]].rarity]
+				ctx.fillRect(100+k%10*70, Math.floor(k/10)*70+95, 60, 60)
+				
+				//Draw the crafted item
+				ctx.drawImage(sprite.items, toDisplay[2][0]%5*60, Math.floor(toDisplay[2][0]/5)*60, 60, 60, 100+k%10*70, Math.floor(k/10)*70+95, 60, 60)
+			}
+                        
+			//Items you have
+			var itemsHave = Array(items.length).fill(0)                     
+			
+			//Update itemsHave
+			for (k in inventory) {
+				if(k==34)break;
+                                itemsHave[inventory[k][0]] = inventory[k][1]
+			}
+			
+			//If there's no recipe to render then that
+			if (!recipesToIndex.length) {
+				ctx.fillStyle="#fff";ctx.fillText("You should get some resources...",445, 265)	
+		        } else {
+				//Get the thing you're hovering over	     
+			        var q = pickup("crafting")
+			        if (q>-2&&q+screenBonus[1]*30<recipesToIndex.length) {
+					q += screenBonus[1]*30
+				        
+					//Craft items if clicked
+					if (click[0]) {
+                                                craftItems(recipesToIndex[q+screenBonus[1]*30])
+				        }
+
+					//Render the materials needed
+					for (k in recipes[recipesToIndex[q]][0]) {
+						//Items needed
+						var t = recipes[recipesToIndex[q]][0][k]
+						
+						//Rarity
+                                                ctx.fillStyle = rarity_colors[items[t[0]].rarity]
+						ctx.fillRect(100+70*k,305,60,60)
+						
+						//Draw it
+						ctx.drawImage(sprite.items, t[0]%5*60, Math.floor(t[0]/5)*60, 60, 60, 100+k*70, 305, 60, 60)
+					        
+						//Colored text
+						ctx.fillStyle = t[1] /*amt needed*/ <= itemsHave[t[0]] /*amt have*/ ? "#0f0" : "#f00"
+						ctx.fillText(t[1],130+70*k,370)
+					}
+				//Arrows GUI
+			        } else if (q==-3&&click[0]) {
+                                        screenBonus[1]-- //<
+				} else if (q==-4&click[0]) {
+					screenBonus[1]++ //>
+				}
+
+				//Update page
+				if(screenBonus[1]>=0)screenBonus[1] %= Math.ceil(recipesToIndex.length/30)
+				else screenBonus[1] = Math.ceil(recipesToIndex.length/30)-1
+			        
+				//Change font
+				ctx.font = "22px Roboto"
+				ctx.textAlign = "center"
+				ctx.fillStyle = "#fff"
+
+				//Page number
+				ctx.fillText("Page "+(screenBonus[1]+1), 450, 405)
+				
+				//Buttons
+				ctx.fillStyle = "#000"
+				ctx.fillRect(365,385,40,40);ctx.fillRect(495,385,40,40)
+				
+				ctx.fillStyle = "#fff"
+				ctx.fillRect(370,390,30,30);ctx.fillRect(500,390,30,30)
+				
+				ctx.fillStyle="#000"
+				ctx.font = "28px Roboto"
+				ctx.fillText("<",385,407)
+				ctx.fillText(">",515,407)
+		        }                 
+		break;
+		case "storage":
+
+			//Background
+                        ctx.fillStyle="#000000a0"
+			ctx.fillRect(200,225,500,150)
+			
+			//Loop through the storage
+			for (let a in objectMap[screenBonus[0]][screenBonus[1]][3].storage) {
+				
+				//Item
+				var item = objectMap[screenBonus[0]][screenBonus[1]][3].storage[a]
+				
+				//Rarity
+				ctx.fillStyle = rarity_colors[items[item[0]].rarity]
+				ctx.fillRect(a%7*70+210,Math.floor(a/7)*70+235,60,60)
+				
+				//Draw the item
+				ctx.drawImage(sprite.items, item[0]%5*60, Math.floor(item[0]/5)*60, 60, 60, a%7*70+210, Math.floor(a/7)*70+235, 60, 60)
+			       
+				//Amount
+				ctx.fillStyle = "#fff";ctx.textAlign="center"
+				if(item[0])ctx.fillText(item[1], a%7*70+240,Math.floor(a/7)*70+300)
+				
+				//Pickup
+				var touch = pickup("storage")
+				if (click[0]&&touch!==-2) {
+					var tempOut = objectMap[screenBonus[0]][screenBonus[1]][3].storage[touch].slice()
+					objectMap[screenBonus[0]][screenBonus[1]][3].storage[touch] = out.slice()
+	                                out = tempOut.slice()
+				}
+			}
+		break;
+	}
 }
-function avgMap() {
-	var tempMap = map.map(copy)
-        var i,j
-                for (i in map) {
-                        for (j in map[i]) {
-                                var neigh=[],k=-1
-                                while (k<=1) {
-                                        var l=-1
-                                        while (l<=1) {
-			                        var aby = k+(i*1)
-			                        var abx = l+(j*1)
-                                                if (aby<height&&abx<width&&aby>-1&&abx>-1) {
-                                                        neigh.push(map[aby][abx])
+function update() {
+	//Stop if map isnt generated
+	if(times<=maxTimes)return
+
+	//Active if you're not dead
+	if (player.stats.hp>0) {
+		
+		//Decrease berserk
+		player.berserkActive--
+		player.moveCooldown = player.moveCooldown.map(a => a+1)
+		var c
+		
+		//Calculate speed
+		var speed = 10*player.stats.movementSpeed
+		speed *= (keyPressed["shift"]&&player.stats.stamina>=0.25/player.stats.staminaCMult)?.6:1
+		
+		//Movement
+		if(player.moveCooldown[0]>=speed&&keyPressed["w"]){move([0,-1]);player.moveCooldown[0]%=speed}
+		if(player.moveCooldown[1]>=speed&&keyPressed["a"]){move([-1,0]);player.moveCooldown[1]%=speed}
+		if(player.moveCooldown[2]>=speed&&keyPressed["s"]){move([0, 1]);player.moveCooldown[2]%=speed}
+		if(player.moveCooldown[3]>=speed&&keyPressed["d"]){move([1, 0]);player.moveCooldown[3]%=speed}
+	        
+		//Smooth movement
+		player.fractionalPos[0] = player.moveCooldown[3]/speed-player.moveCooldown[1]/speed
+		player.fractionalPos[1] = player.moveCooldown[2]/speed-player.moveCooldown[0]/speed  
+		let x=-40
+		while (x <= 40) {
+		        let y = -40
+		        while (y <= 40) {
+		        	let x2 = player.pos[0] + x
+				let y2 = player.pos[1] + y  
+				
+				//Object out of HP
+				if (objectMap[x2][y2][1] <= 0&&objectMap[x2][y2][0]) {
+
+					//Spawn items based on loot table
+                                        spawnItems(lootTables[objectMap[x2][y2][0]], 1, x2+0.5, y2+0.5)
+					
+					//Special cases
+					switch (objectMap[x2][y2][0]) {
+                                                case 25: //Chests
+						case 26:
+						        var a
+						        for (a in objectMap[x2][y2][3].storage) {
+							        var rad = Math.random()*Math.PI*2
+			                                        var speed = Math.random()*0.1
+								var loot = objectMap[x2][y2][3].storage[a]
+			                                        drops.push({
+				                                        id: loot[0],
+				                                        x: x+0.5,
+				                                        y: y+0.5,
+				                                        dx: Math.sin(rad)*speed,
+				                                        dy: Math.cos(rad)*speed,
+				                                        friction: 0.97,
+				                                        amount: 1,
+				                                        life: loot[1], 
+			                                        })
+						        }
+						break;
+					}
+                                        
+					//Reset the object
+					objectMap[x2][y2] = [0,0,0,{},0]
+				}
+		        	y++
+		        }
+		        x++
+	        }
+
+		//Update several things
+		updateStats()
+		updateTime()
+		updateInventory()
+		updateClick()
+		
+		//Pickup
+		if (click[0]) pickup("inventory")
+
+		//Stamina update
+                if (keyPressed["shift"]) {
+			player.stats.stamina=Math.max(player.stats.stamina-0.25*player.stats.staminaCMult,0)
+		} else {
+			player.stats.stamina=Math.min(player.stats.stamina+0.25,100)
+		}
+
+		//Attack update
+		player.attackCooldown < 80 ? player.attackCooldown+=player.stats.attackSpeed*items[inventory[holding][0]].atkSpeed : 0
+		
+		//Attack action
+		if (mouseDown[0]&&player.attackCooldown>=80&&screen=="") {
+			player.attackCooldown %= 80
+			attackDuration = 5	
+			attack()
+		}
+
+		//testing
+		/*if (mouseDown[0]) {
+                        var rotation = Math.atan2(mousePos.x-450,mousePos.y-330)
+	                var wx = Math.sin(rotation)
+	                var wy = Math.cos(rotation)
+	                projs.push(new Projectile(player.pos[0]+.5,player.pos[1]+.5,wx,wy,-rotation+Math.PI,1,["object","enemies"],200,100))
+		}*/
+		
+		//Level up
+		levelUp()
+
+		//Render
+	        render()   
+	} else {
+		//You ded!
+		alert("yuo ded \n reload for new world")
+	}
+}
+function updateBrightness() {
+	var x=-40
+	while (x<=40) {
+                var y=-40
+	        while (y<=40) {
+			var x1 = x+player.pos[0]
+			var y1 = y+player.pos[1]
+
+			//In bounds
+			if (x1<map.length&&x1>-1&&y1<map.length&&y1>-1) {
+				//Base brightness
+			        brightnessMap[x1][y1] = (Math.cos(hr*Math.PI/12+Math.PI)+1.1)/2.1        
+		        }
+		        y++
+	        }
+		x++
+	}
+	//Brightness from objects
+	var x=-40
+	while (x<=40) {
+                var y=-40
+	        while (y<=40) {
+			var x1 = x+player.pos[0]
+			var y1 = y+player.pos[1]
+
+			//In bounds
+			if (x1<map.length&&x1>-1&&y1<map.length&&y1>-1) {
+                                
+				//Torch / Furnace
+				if (objectMap[x1][y1][0]==15||objectMap[x1][y1][0]==23) {
+		                        var x2 = -20
+		                        while (x2<=20) {
+			                        var y2 = -20
+                                                while (y2<=20) {
+				                        var x3 = x1+x2
+				                        var y3 = y1+y2
+				                        if (x3<map.length&&x3>-1&&y3<map.length&&y3>-1) {
+					                        brightnessMap[x3][y3] += Math.min((Math.random()*0.05+0.95)/(x2**2+y2**2)*2,0.4)
+				                        }
+				                        y2++
 			                        }
-                                                l++
-                                        }
-                                        k++
-                                }
-                                tempMap[i][j] = neigh.reduce((a,b) => a+b)/(neigh.length**(1-times/50))
-                        }
-                } //avg things out
-        map = tempMap
+			                        x2++
+	                         	} 
+	                        }
+		        }
+		        y++
+	        }
+		x++
+	}
 }
-function heatMaps() {
-    var y2=0
-    while (y2<height) {
-        var x2=0
-        while (x2<width) {
-            heatMap[y2][x2] += random.nextFloat()-0.5 //same as height maps
-            heatMax=Math.max(heatMap[y2][x2],heatMax);heatMin=Math.min(heatMap[y2][x2],heatMin)
-            x2++
-        }
-        y2++
-    }
-    if(times%avg==0) {
-        var tempHMap = heatMap.map(copy) //we copy the map and not make referecne senbfugeidfbhg
-        var u,v
-        for (u in heatMap) {
-            for (v in heatMap[u]) {
-                var neigh=[],w=-1
-                while (w<=1) {
-                    var x=-1
-                    while (x<=1) {
-			var aay = w+(u*1)
-			var aax = x+(v*1)
-                        if (aay<height&&aax<width&&aay>-1&&aax>-1) {
-                                neigh.push(heatMap[aay][aax])
+function updateInventory() {
+	
+	//Amounts and index
+	var amounts=Array(items.length).fill(0),IndxOnInv=Array(items.length).fill(-1)
+ 
+	//Update values
+	for (c in inventory) {
+	        if(c>34)break;
+		if (inventory[c][1]>0) {
+                        amounts[inventory[c][0]] += inventory[c][1]
+		        IndxOnInv[inventory[c][0]] = c
+		        unlocked[inventory[c][0]] = true
+		} 
+	}
+	var tempArmor = inventory[35]
+        inventory = Array(35).fill([0,0]).map(copy)
+	inventory.push(tempArmor.slice(0))
+
+	//Update inventory
+	for (c in IndxOnInv) {
+                if (IndxOnInv[c]>-1) {
+			inventory[IndxOnInv[c]][0] = c*1
+			inventory[IndxOnInv[c]][1] = amounts[c]
+		}
+	 }
+}
+function updateStats() {
+	var baseStats = {
+		hp: player.stats.hp,
+		mhp: 100,
+		stamina: player.stats.stamina,
+		staminaCMult: 1,
+		movementSpeed: 1,
+		defense: 0,
+		attackSpeed: 1,
+		reach: 40,
+		critChance: 5,
+		critDamage: 140,
+		inventorySlots: 14,
+		regen: 0,
+	}
+	//drive
+	var b = []
+	//Set boosts
+	b[0] = player.stats.hp/player.stats.mhp<player.powerups.drive/(10+player.powerups.drive) ? player.powerups.drive**0.4 : 0
+        b[1] = player.powerups.berserkActive>0?Math.log(player.powerups.berserk):0
+	b[2] = player.powerups.rubyPower
+	
+	//From powerups/armor
+	baseStats.defense        += items[inventory[35][0]].defense
+	baseStats.defense        += items[inventory[35][1]].defense
+	baseStats.defense        += items[inventory[35][2]].defense
+	baseStats.defense        += items[inventory[35][3]].defense
+	baseStats.inventorySlots += player.powerups.box*2
+	baseStats.critDamage     += player.powerups.rock*8+b[1]*2
+	baseStats.attackSpeed    += player.powerups.milk1*0.045+b[1]/2
+	baseStats.defense        *= player.powerups.milk2*0.05+b[2]/100+1
+	baseStats.reach          += player.powerups.glove*4
+	baseStats.critChance     += player.powerups.clover1*10+b[2]/1000
+	baseStats.staminaCMult   *= 3/(player.powerups.milk3+3)*10000/(b[2]+10000)
+	baseStats.movementSpeed  *= 5/(player.powerups.ring+5)*10000/(b[2]+10000)
+        baseStats.mhp            += player.powerups.pill*20+b[2]
+	baseStats.regen          += player.powerups.milk4*0.02
+        
+	//Boosts
+	baseStats.defense *= b[0]+1
+	baseStats.critDamage *= b[0]/1.4+1
+	baseStats.attackSpeed *= b[0]/3+1
+	baseStats.reach += b[0]*1.3+1
+	baseStats.critChance += b[0]+1
+	baseStats.staminaCMult /= b[0]/2+1
+	baseStats.regen *= b[0]+1
+
+	//Regen
+	baseStats.hp = Math.min(baseStats.regen+baseStats.hp,baseStats.mhp)
+	
+	//Set stats
+	player.stats = baseStats
+}
+function updateTime() {
+	//Increment time
+        hr += 0.002
+
+	//No floating point precision error
+	hr = hr.toFixed(4)
+	
+	//Spawn enemies if night and every 30 mins
+	if(!(hr*1000%500)&&hr<6)spawnEnemies()
+	
+	//Update day
+	hr %= 24
+	if (hr==0) day++
+
+	//Calculate difficulty
+	diff = 1.1**day*Math.sqrt(diffMult)
+
+	//Damage monster if it's past 8:00
+	if (hr>=8) {
+		for (let n in enemies) {
+			enemies[n].hp -= enemies[n].mhp/500/Math.sqrt(diffMult)
+		}
+	}
+}
+function showDetails() {
+
+	//Do not do anything if screen is not inventory
+	if (screen!=="inventory")return
+
+	var touched = -2
+
+	//Hotbar
+        if (mousePos.y>=530&&mousePos.x<500&&mousePos.y<=590) {
+                if (mousePos.x%70-9>0) {
+			touched = Math.floor(mousePos.x/70)
+		}
+	} 
+	
+	//Inventory
+	else if (mousePos.y>=95&&mousePos.x>=65&&(mousePos.y%70<15||mousePos.y%70>24)&&(mousePos.x+5)%70<60&&mousePos.x<=644&&mousePos.y<=444&&screen=="inventory") {
+                touched = Math.floor((mousePos.x-65)/70)+(4-Math.floor((mousePos.y-95)/70))*7
+	}
+	
+	//If touched isnt [REDACTED] and it's not outside inventory
+	if(touched!==-2&&touched<player.stats.inventorySlots) {
+               
+		//Rarity
+		ctx.fillStyle = rarity_colors[items[inventory[touched][0]].rarity]
+		ctx.fillRect(640, 95, 60, 60)
+		
+		//Draw it
+		ctx.drawImage(sprite.items, inventory[touched][0]%5*60, Math.floor(inventory[touched][0]/5)*60, 60, 60, 640, 95, 60, 60)
+		
+	        //Font	
+		ctx.fillStyle = "#fff"
+		ctx.font = Math.floor(240/(items[inventory[touched][0]].name.length))+"px Roboto"
+		
+		//Name
+		ctx.fillText(items[inventory[touched][0]].name,765,125)
+		
+		//Damage amount
+		ctx.font = "18px Roboto"
+		ctx.textAlign = "left"
+		wrapText("Damage: "+items[inventory[touched][0]].minDamage+" - "+items[inventory[touched][0]].maxDamage, 640, 170, 185, 17)
+	        
+		//Rarity
+		ctx.fillText("Rarity:", 640, 190, 185, 17)	
+		ctx.fillStyle=rarity_colors[items[inventory[touched][0]].rarity];ctx.fillText(items[inventory[touched][0]].rarity.toUpperCase(), 694, 190)
+		
+		//Description
+		ctx.fillStyle="#fff"      
+		wrapText("Description: "+items[inventory[touched][0]].desc, 640, 210, 185, 17)
+	}
+}
+function spawnEnemies() {
+	
+	//Spawning variables
+	var spwnPower = (Math.log(day)+1)*3*Math.random()*Math.cbrt(diffMult)
+	console.log(spwnPower)
+	var spawnable = {
+		"zombie": 2,
+		"skeleton": 2,
+	}
+
+	//Prevents infinite loop
+	var n = 100
+	while (n > 0) {
+
+		//Find type to spawn
+		var spawn = anti_weighted_random(spawnable)
+		if (spawnable[spawn]<=spwnPower) {
+
+			n = 100
+			spwnPower -= spawnable[spawn]
+
+			//Find spawn position
+			var spawnPos = [Math.floor(Math.random()*70)-35+player.pos[0],Math.floor(Math.random()*70)-35+player.pos[1]]
+		        while (spawnPos[0]<0||spawnPos[0]>=map.length||spawnPos[1]<0||spawnPos[1]>=map.length) {
+				spawnPos = [Math.floor(Math.random()*70)-35+player.pos[0],Math.floor(Math.random()*70)-35+player.pos[1]]
 			}
-                        x++
-                    }
-                    w++
-                }
-                var red = (a,b) => a+b
-                tempHMap[u][v] = neigh.reduce(red)/(neigh.length**(1-times/200))
-            }
+			//20 spawning attempts       
+			var a = 20       
+			while (objectMap[spawnPos[0]][spawnPos[1]][0]&&a--) {
+				spawnPos = [Math.floor(Math.random()*70)-35+player.pos[0],Math.floor(Math.random()*70)-35+player.pos[1]]
+			}
+			if (a>0) {
+
+				//Get mob to spawn
+				var toSpawn = getMobs(spawn,spawnPos[0],spawnPos[1])
+
+				//Spawn
+				enemies.push(toSpawn)
+			}
+		} else {
+			n--
+		}
+	}
+}
+function spawnItems(lootTable, times, x, y) {
+	var loots = [],a,c=0
+	//loottable format: [id n, chance n] or [id n, min n, max n]
+	
+	//Go through loot table and add to the list of items to spawn
+	while (c++ < times) {
+	        for (a in lootTable) {
+		        switch (lootTable[a].length) {
+
+				//Chance table
+			        case 2:
+                                        if (Math.random()<lootTable[a][1]/100) {
+				        	loots.push( [lootTable[a][0], 1] )
+			        	}
+		        	break;
+
+				//Amount table
+		        	case 3:
+			        	loots.push( [lootTable[a][0], Math.round(randomRange(lootTable[a][1], lootTable[a][2]))] )
+		        	break;
+	        	}
+        	}
         }
-        heatMap = tempHMap 
-    }
+
+	//Spawn items
+	for (a in loots) {
+		while (loots[a][1]--) {
+			var rad = Math.random()*Math.PI*2
+			var speed = Math.random()*0.1
+			drops.push({
+				id: loots[a][0],
+				x: x+0.5,
+				y: y+0.5,
+				dx: Math.sin(rad)*speed,
+				dy: Math.cos(rad)*speed,
+				friction: 0.97,
+				amount: 1,
+				life: 7, 
+			})
+		}
+	}
 }
-function normalize() {
-        var y,z
-        var i,j
-	var pow = new RNG(seed+3).nextFloat()*.5+.8
-	var halfMap = map.length/2
-	var quarterMap = map.length/4
-	for (y in map) {
-                for (z in map[y]) {
-                        map[y][z] = (map[y][z]-min)/(max-min)
-			var mult = 1 - (Math.max(Math.abs(y-halfMap),Math.abs(z-halfMap),quarterMap)-quarterMap)/quarterMap
-			map[y][z] *= mult
-			map[y][z] = map[y][z] ** pow
-                }
-        } //fuck efficiency
-	min = Infinity,max=-Infinity
-	map = scaleConcat(map, 4)
-	var tempMap = map.map(copy)
-	for (i in map) {
-                for (j in map[i]) {
-                        var neigh=[],k=-1
-                        while (k<=1) {
-                                var l=-1
-                                while (l<=1) {
-			                var aby = k+(i*1)
-			                var abx = l+(j*1)
-                                        if (aby<map.length&&abx<map.length&&aby>-1&&abx>-1) {
-                                                neigh.push(map[aby][abx])
-			                }
-                                        l++
-                                }
-                                k++
-                        }
-                        tempMap[i][j] = neigh.reduce((a,b) => a+b)/neigh.length
-                        min = Math.min(tempMap[i][j],min) ; max = Math.max(tempMap[i][j],max)
-                }
-        } //avg things out  
-        map = tempMap.map(copy)       
-	for (y in map){for (z in map){map[y][z]=(map[y][z]-min)/(max-min)}}       
-	map = scaleConcat(map, 2)
-	player.pos[0] = Math.round(random.nextFloat()*(map.length-2))
-        player.pos[1] = Math.round(random.nextFloat()*(map[0].length-2))
-        while (map[player.pos[0]][player.pos[1]]<0.3) {
-	        player.pos[0] = Math.floor(random.nextFloat()*(map.length-2))
-	        player.pos[1] = Math.floor(random.nextFloat()*(map[0].length-2))
-        }
-	objectMap = JSON.parse(JSON.stringify(Array(map.length).fill(Array(map[0].length).fill([0,0,0,{},0]))))  
-	brightnessMap = map.map(copy)
-	//[0] = id, [1] = hp, [2] = mhp, [3] = extra info      
-	spawnVein(1 ,200,35) //balsa forest
-	spawnVein(2 ,800,8) //stone thingy
-	spawnVein(3 ,800,8) //copper
-	spawnVein(4 ,800,7) //iron
-	spawnVein(5 ,200,30) //maple forest
-	spawnVein(6 ,700,6) //platinum
-	spawnVein(7 ,700,6) //mithril
-	spawnVein(8 ,200,25) //birch forest
-	spawnVein(9 ,600,4) //adam
-	spawnVein(10,600,4) //titan
-	spawnVein(11,200,20) //pine
-	spawnVein(12,500,3) //unob
-	spawnVein(13,500,3) //uni
-	/*terrainGradient = ctx.createLinearGradient(0,0,1000,0)
-	terrainGradient.addColorStop(.1 ,"hsl(192, 100%, 15%)")
-	terrainGradient.addColorStop(.2 ,"hsl(192, 100%, 30%)")
-	terrainGradient.addColorStop(.3 ,"hsl(192, 100%, 50%)")
-	terrainGradient.addColorStop(.4 ,"hsl(62 , 100%, 45%)")
-	terrainGradient.addColorStop(.62,"hsl(120, 100%, 30%)")
-	terrainGradient.addColorStop(.71,"hsl(120 ,100%, 15%)")
-	terrainGradient.addColorStop(.75,"hsl(30 ,   0%, 40%)")
-	terrainGradient.addColorStop(1  ,"hsl(0  ,   0%, 90%)")
-	document.getElementById("canvas2").getContext("2d").fillStyle = terrainGradient
-	document.getElementById("canvas2").getContext("2d").fillRect(0,0,1000,1)*/
-        console.timeEnd("test")
+function loadData() {
+	var save = JSON.parse(localStorage.survive)
+	if (save) return
+	var baseSave = {
+                achv: Array(1024).fill(true)
+	}
 }
-function lerp(a,b,t) {
-	t = Math.max(Math.min(1,t),0)
-        return t*(b-a)+a
+class Projectile {
+	constructor (x,y,dx,dy,rotation,damage,canDamage,life,pierce) {
+                this.x = x
+		this.y = y
+		this.dx = dx
+		this.dy = dy
+		this.rotation = rotation
+		this.damage = damage
+		this.canDamage = canDamage
+		this.tick = function() {
+			
+			//Movement
+			var distToMove = this.dx**2+this.dy**2
+			var vRotation = Math.atan2(this.dx,this.dy)
+			var rx = Math.floor(this.x)
+			var ry = Math.floor(this.y)
+			var collided
+
+			//Bullet marching 
+			while (distToMove>0&&!collided) {
+				var minDist = Infinity,n
+				if (this.canDamage.indexOf("enemies")>-1) {
+                                        for (n in enemies) {
+						if(collided)break
+						        
+						//Setting min distance
+						var dist = get2DistToCircle(this.x,this.y,enemies[n].x,enemies[n].y,Math.SQRT1_2*1.5,0)
+						minDist = Math.min(dist,minDist)
+
+						//Collision
+						if (dist<=0) {
+                                                        collided = n*1
+						}
+					}
+				}
+				if (this.canDamage.indexOf("object")>-1) {
+
+					//Find the check range
+					var n=Math.ceil(Math.sqrt(distToMove))
+					var x=-n
+					while (x<=n&&!collided) {
+						var y = -n
+						while (y<=n&&!collided) {
+
+							//Prevents infinite loop
+							var x2 = x+rx , y2 = y+ry
+							y++
+							if (!objectMap[x2][y2][0]) continue
+
+							//Distance shenanigans
+                                                        var dist = get2DistToCircle(this.x,this.y,x2+.5,y2+.5,Math.SQRT1_2*1.5,0)
+						        minDist = Math.min(minDist,dist)
+
+							//Collision
+							if (dist<=0) {
+								collided = [x2,y2]
+							}       
+						}
+					        x++
+					}
+				}
+				if (this.canDamage.indexOf("player")>-1) {
+					if (!collided) {
+						//Yes
+						var dist = get2DistToCircle(this.x,this.y,player.pos[0]+.5,player.pos[1]+.5,Math.SQRT1_2*1.5,0)
+						minDist = Math.min(minDist,dist)
+
+						//Dist<=0 -> collided
+						if (dist<=0) {
+							collided = "player"
+						}
+					}
+				}
+
+				//Set minDist
+				minDist = Math.max(0,Math.min(distToMove,minDist))
+				distToMove -= minDist
+				minDist = Math.sqrt(minDist)
+
+				//Movement
+				this.x += Math.sin(vRotation)*minDist
+				this.y += Math.cos(vRotation)*minDist
+			}
+
+			//Less life :(
+			this.life--
+
+			//Damaging
+			switch (typeof collided) {
+				
+				//Player
+				case "string":
+				        var damage = this.damage*100/(player.stats.defense+100)
+	                                player.stats.hp = Math.max(0,player.stats.hp-damage)
+				break;
+
+				//Enemies
+				case "number":
+				        enemies[collided].hp -= this.damage
+				break;
+
+				//Objects
+				case "object":
+					objectMap[collided[0]][collided[1]][1] -= this.damage
+				break;
+			}		
+		
+		        //Destroy the proj on hit
+			this.life = collided?0:this.life
+		}
+		this.life = life
+	}
 }
-function loglerp(a,b,t) {
-	return Math.E**lerp(Math.log(a),Math.log(b),t)
-}
-var intv
-var copy = a => {return a.slice(0)}
-var keyPressed = {}
-window.onkeyup   = function (e) {keyPressed[e.key.toLowerCase()] = false}
-window.onkeydown = function (e) {keyPressed[e.key.toLowerCase()] = true }
-setInterval(update,20)
 </script>
 </html>
